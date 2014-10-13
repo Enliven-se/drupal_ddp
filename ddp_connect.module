@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Support module for Spectacle digital signage publishing.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ddp_connect_menu() {
+  $items['admin/config/ddp-connect'] = array(
+    'title' => 'Spectacle settings',
+    'description' => 'Settings related to DDP Connect module.',
+    'position' => 'left',
+    'weight' => -100,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/config/ddp-connect/meteor'] = array(
+    'title' => t('Spectacle Meteor.js settings'),
+    'description' => t('Configure Spectacle.'),
+    'access arguments' => array('administer spectacle'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ddp_connect_admin_form'),
+    'file' => 'ddp_connect.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_node_save().
+ */
+function ddp_connect_node_presave($node) {
+  // Send post data to our ddp node server.
+  if ($node->type == 'post') {
+    $ddp_client_url = 'http://localhost:8080/';
+
+    // Collect Post data.
+    $data = '{"node":' . json_encode($node) . '}';
+
+    $options = array(
+      'method' => 'POST',
+      'data' => $data,
+      'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
+    );
+    $result = drupal_http_request($ddp_client_url, $options);
+  }
+}
