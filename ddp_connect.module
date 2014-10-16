@@ -2,33 +2,50 @@
 
 /**
  * @file
- * Support module for Spectacle digital signage publishing.
+ * Support module for DDP Connect
  */
 
 /**
  * Implements hook_menu().
  */
 function ddp_connect_menu() {
-  $items['admin/config/ddp-connect'] = array(
-    'title' => 'Spectacle settings',
+  $items['admin/config/development/ddp-connect'] = array(
+    'title' => 'DDP Connect Settings',
     'description' => 'Settings related to DDP Connect module.',
-    'position' => 'left',
-    'weight' => -100,
-    'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
-    'file' => 'system.admin.inc',
-    'file path' => drupal_get_path('module', 'system'),
-  );
-  $items['admin/config/ddp-connect/meteor'] = array(
-    'title' => t('Spectacle Meteor.js settings'),
-    'description' => t('Configure Spectacle.'),
-    'access arguments' => array('administer spectacle'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ddp_connect_admin_form'),
-    'file' => 'ddp_connect.admin.inc',
+    'page arguments'  => array('_ddp_connect_form'),
+    'access callback' => TRUE,
   );
   return $items;
 }
+
+/**
+ * Settings form for DDP Connect module
+ */
+function _ddp_connect_form(){
+  $form = array();
+  $form['ddp_connect_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('DDP Connect Settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
+  );
+  $form['ddp_connect_settings']['node_server'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Node Server Port'),
+    '#default_value' => variable_get('ddp_node_server_port'),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Settings page for DDP Connect module
+ */
+// function _ddp_connect_settings(){
+//   $content = _ddp_connect_form();
+//   return $content;
+// }
 
 /**
  * Implements hook_node_save().
@@ -48,4 +65,92 @@ function ddp_connect_node_presave($node) {
     );
     $result = drupal_http_request($ddp_client_url, $options);
   }
+}
+
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds custom fieldset to the node form, and attach ajax behaviour for vertical
+ * panels to update the settings description.
+ *
+ * @see ddp_connect.js
+ */
+function ddp_connect_form_alter(&$form, $form_state, $form_id) {
+  // Only include on node add/edit forms.
+  if ($form_id == "node_type_form") {
+
+    // Create a fieldset that will be included in the vertical tab.
+    $form['ddp_connect'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('DDP Connect'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#tree' => TRUE,
+      // The #group value must match the name of the vertical tabs element.
+      // In most cases, this is 'additional_settings'.
+      '#group' => 'additional_settings',
+      // Vertical tabs provide its most usable appearance when they are used to
+      // include a summary of the information contained in the fieldset. To do
+      // this, we attach additional JavaScript to handle changing the summary
+      // when form settings are changed.
+      '#attached' => array(
+        'js' => array(
+          'vertical-tabs' => drupal_get_path('module', 'ddp_connect') . '/ddp_connect.js',
+        ),
+      ),
+    );
+
+    // The form elements below provide a demonstration of how a fieldset
+    // summary can be displayed in a collapsed tab.
+    //
+    // This checkbox is used to show or hide the custom settings form using
+    // javascript (altering states of a container defined later).
+    $form['ddp_connect']['enabled'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use this content type with DDP Connect'),
+      '#default_value' => FALSE,
+    );
+
+    // // This container will be used to store the whole form for our custom
+    // // settings. This way, showing/hiding the form using javascript is easier,
+    // // as only one element should be set visible.
+    // $form['ddp_connect']['ddp_connect_container'] = array(
+    //   '#type' => 'container',
+    //   '#parents' => array('ddp_connect'),
+    //   '#states' => array(
+    //     'invisible' => array(
+    //       // If the checkbox is not enabled, show the container.
+    //       'input[name="ddp_connect[enabled]"]' => array('checked' => FALSE),
+    //     ),
+    //   ),
+    // );
+
+    // // The string of this textfield will be shown as summary in the vertical
+    // // tab.
+    // $form['ddp_connect']['ddp_connect_container']['custom_setting'] = array(
+    //   '#type' => 'textfield',
+    //   '#title' => t('Use this setting instead'),
+    //   '#default_value' => 'I am a setting with a summary',
+    //   '#description' => t('As you type into this field, the summary will be updated in the tab.'),
+    // );
+  }
+}
+
+
+/**
+ * Implements hook_permission().
+ *
+ * Since the access to our new custom pages will be granted based on
+ * special permissions, we need to define what those permissions are here.
+ * This ensures that they are available to enable on the user role
+ * administration pages.
+ */
+function ddp_connect_permission() {
+  return array(
+    'access ddp connect' => array(
+      'title' => t('Access DDP Connect Settings'),
+      'description' => t('Allow users to access DDP Connect Settings'),
+    ),
+  );
 }
