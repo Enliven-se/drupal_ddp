@@ -2,18 +2,18 @@
 
 /**
  * @file
- * Support module for DDP Connect
+ * Support module for Drupal DDP.
  */
 
 /**
  * Implements hook_menu().
  */
-function ddp_connect_menu() {
+function drupal_ddp_menu() {
   $items['admin/config/development/ddp-connect'] = array(
     'title' => 'DDP Connect Settings',
     'description' => 'Settings related to DDP Connect module.',
     'page callback' => 'drupal_get_form',
-    'page arguments'  => array('_ddp_connect_form'),
+    'page arguments'  => array('_drupal_ddp_form'),
     'access callback' => TRUE,
   );
   return $items;
@@ -22,16 +22,16 @@ function ddp_connect_menu() {
 /**
  * Settings form for DDP Connect module
  */
-function _ddp_connect_form(){
+function _drupal_ddp_form(){
   $form = array();
-  $form['ddp_connect_settings'] = array(
+  $form['drupal_ddp_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('DDP Connect Settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#tree' => TRUE,
   );
-  $form['ddp_connect_settings']['node_server'] = array(
+  $form['drupal_ddp_settings']['node_server'] = array(
     '#type' => 'textfield',
     '#title' => t('Node Server Port'),
     '#default_value' => variable_get('ddp_node_server_port'),
@@ -42,15 +42,15 @@ function _ddp_connect_form(){
 /**
  * Settings page for DDP Connect module
  */
-// function _ddp_connect_settings(){
-//   $content = _ddp_connect_form();
+// function _drupal_ddp_settings(){
+//   $content = _drupal_ddp_form();
 //   return $content;
 // }
 
 /**
  * Implements hook_node_save().
  */
-function ddp_connect_node_presave($node) {
+function drupal_ddp_node_presave($node) {
   // Send post data to our ddp node server.
   if ($node->type == 'post') {
     $ddp_client_url = 'http://localhost:8080/';
@@ -74,14 +74,14 @@ function ddp_connect_node_presave($node) {
  * Adds custom fieldset to the node form, and attach ajax behaviour for vertical
  * panels to update the settings description.
  *
- * @see ddp_connect.js
+ * @see drupal_ddp.js
  */
-function ddp_connect_form_alter(&$form, $form_state, $form_id) {
+function drupal_ddp_form_alter(&$form, $form_state, $form_id) {
   // Only include on node add/edit forms.
   if ($form_id == "node_type_form") {
 
     // Create a fieldset that will be included in the vertical tab.
-    $form['ddp_connect'] = array(
+    $form['drupal_ddp'] = array(
       '#type' => 'fieldset',
       '#title' => t('DDP Connect'),
       '#collapsible' => TRUE,
@@ -96,7 +96,7 @@ function ddp_connect_form_alter(&$form, $form_state, $form_id) {
       // when form settings are changed.
       '#attached' => array(
         'js' => array(
-          'vertical-tabs' => drupal_get_path('module', 'ddp_connect') . '/ddp_connect.js',
+          'vertical-tabs' => drupal_get_path('module', 'drupal_ddp') . '/drupal_ddp.js',
         ),
       ),
     );
@@ -106,7 +106,7 @@ function ddp_connect_form_alter(&$form, $form_state, $form_id) {
     //
     // This checkbox is used to show or hide the custom settings form using
     // javascript (altering states of a container defined later).
-    $form['ddp_connect']['enabled'] = array(
+    $form['drupal_ddp']['enabled'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use this content type with DDP Connect'),
       '#default_value' => FALSE,
@@ -115,20 +115,20 @@ function ddp_connect_form_alter(&$form, $form_state, $form_id) {
     // // This container will be used to store the whole form for our custom
     // // settings. This way, showing/hiding the form using javascript is easier,
     // // as only one element should be set visible.
-    // $form['ddp_connect']['ddp_connect_container'] = array(
+    // $form['drupal_ddp']['drupal_ddp_container'] = array(
     //   '#type' => 'container',
-    //   '#parents' => array('ddp_connect'),
+    //   '#parents' => array('drupal_ddp'),
     //   '#states' => array(
     //     'invisible' => array(
     //       // If the checkbox is not enabled, show the container.
-    //       'input[name="ddp_connect[enabled]"]' => array('checked' => FALSE),
+    //       'input[name="drupal_ddp[enabled]"]' => array('checked' => FALSE),
     //     ),
     //   ),
     // );
 
     // // The string of this textfield will be shown as summary in the vertical
     // // tab.
-    // $form['ddp_connect']['ddp_connect_container']['custom_setting'] = array(
+    // $form['drupal_ddp']['drupal_ddp_container']['custom_setting'] = array(
     //   '#type' => 'textfield',
     //   '#title' => t('Use this setting instead'),
     //   '#default_value' => 'I am a setting with a summary',
@@ -146,7 +146,7 @@ function ddp_connect_form_alter(&$form, $form_state, $form_id) {
  * This ensures that they are available to enable on the user role
  * administration pages.
  */
-function ddp_connect_permission() {
+function drupal_ddp_permission() {
   return array(
     'access ddp connect' => array(
       'title' => t('Access DDP Connect Settings'),
