@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function drupal_ddp_uninstall() {
+  variable_del('drupal_ddp_article');
+}
