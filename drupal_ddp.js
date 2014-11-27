@@ -10,7 +10,7 @@ Drupal.behaviors.vertical_tabs_exampleFieldsetSummaries = {
       // Depending on the checkbox status, the settings will be customized, so
       // update the summary with the custom setting textfield string or a use a
       // default string.
-      if ($('#edit-drupa-ddp-enabled', context).attr('checked')) {
+      if ($('#edit-drupal-ddp-enabled', context).attr('checked')) {
         return Drupal.t('Use with DDP');
       }
       else {

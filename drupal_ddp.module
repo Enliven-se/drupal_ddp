@@ -88,20 +88,22 @@ function drupal_ddp_node_presave($node) {
  *
  * @see drupal_ddp.js
  */
-function drupal_ddp_form_alter(&$form, $form_state, $form_id) {
+function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
   // Only include on node add/edit forms.
-  if ($form_id == "node_type_form") {
+  if (isset($form['type'])) {
 
     // Create a fieldset that will be included in the vertical tab.
     $form['drupal_ddp'] = array(
       '#type' => 'fieldset',
-      '#title' => t('DDP Connect'),
+      '#title' => t('Drupal DDP'),
       '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#tree' => TRUE,
+      '#collapsed' => TRUE,
       // The #group value must match the name of the vertical tabs element.
       // In most cases, this is 'additional_settings'.
       '#group' => 'additional_settings',
+      '#attributes' => array(
+        'class' => array('drupal-ddp-node-type-settings-form'),
+      ),
       // Vertical tabs provide its most usable appearance when they are used to
       // include a summary of the information contained in the fieldset. To do
       // this, we attach additional JavaScript to handle changing the summary
@@ -118,10 +120,11 @@ function drupal_ddp_form_alter(&$form, $form_state, $form_id) {
     //
     // This checkbox is used to show or hide the custom settings form using
     // javascript (altering states of a container defined later).
-    $form['drupal_ddp']['enabled'] = array(
+    $ddp_enabled = variable_get('drupal_ddp_enabled' . $form['#node_type']->type, 0);
+    $form['drupal_ddp']['drupal_ddp_enabled'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use this content type with DDP Connect'),
-      '#default_value' => variable_get('drupal_ddp' . $type->name),
+      '#default_value' => $ddp_enabled,
     );
 
     // // This container will be used to store the whole form for our custom
