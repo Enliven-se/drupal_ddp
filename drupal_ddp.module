@@ -10,8 +10,8 @@
  */
 function drupal_ddp_menu() {
   $items['admin/config/development/ddp-connect'] = array(
-    'title' => 'DDP Connect Settings',
-    'description' => 'Settings related to DDP Connect module.',
+    'title' => 'Drupal DDP Settings',
+    'description' => 'Settings related to Drupal DDP module.',
     'page callback' => 'drupal_get_form',
     'page arguments'  => array('_drupal_ddp_form'),
     'access callback' => TRUE,
@@ -24,48 +24,94 @@ function drupal_ddp_menu() {
  */
 function drupal_ddp_permission() {
   return array(
-    'access ddp connect' => array(
-      'title' => t('Access DDP Connect Settings'),
-      'description' => t('Allow users to access DDP Connect Settings'),
+    'access drupal ddp' => array(
+      'title' => t('Access Drupal DDP Settings'),
+      'description' => t('Allow users to access Drupal DDP Settings'),
     ),
   );
 }
 
 /**
- * Settings form for DDP Connect module
+ * Settings form for Drupal DDP module
  */
 function _drupal_ddp_form(){
   $form = array();
   $form['drupal_ddp_settings'] = array(
     '#type' => 'fieldset',
-    '#title' => t('DDP Connect Settings'),
+    '#title' => t('Drupal DDP Settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#tree' => TRUE,
   );
-  $form['drupal_ddp_settings']['node_server'] = array(
+  $form['drupal_ddp_settings']['drupal_ddp_settings_meteor_socket'] = array(
     '#type' => 'textfield',
-    '#title' => t('Node Server Port'),
-    '#default_value' => variable_get('ddp_node_server_port'),
+    '#title' => t('SockJS path for Meteor application'),
+    '#default_value' => variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs'),
+    '#description' => t('Enter the /sockjs address of your Meteor application. This is usually the URL to your Meteor application followed by /sockjs.'),
   );
+
+  $content_types = node_type_get_types();
+  $use_with_ddp = $types = array();
+
+  foreach($content_types as $key => $type){
+    $types[$key] = t($type->name);
+
+    // If enabled to use Drupal DDP.
+    // Getting the value that may have 
+    // been set from 'node_type_form'
+    if(variable_get('drupal_ddp_enabled_' . $key, 0) == 1){
+      $use_with_ddp[] = $key;
+    }
+  }
+
+  $form['drupal_ddp_settings']['drupal_ddp_settings_enabled_types'] = array(
+    '#title' => t('Content Types'),
+    '#type' => 'checkboxes',
+    '#description' => t('Select the content types to use with Drupal DDP.'),
+    '#options' => $types,
+    '#default_value' => $use_with_ddp,
+  );
+  $form['#submit'][] = '_drupal_ddp_settings_submit';
+
   return system_settings_form($form);
 }
 
 /**
- * Settings page for DDP Connect module
+ * Custom submit handler for _drupal_ddp_form
  */
-// function _drupal_ddp_settings(){
-//   $content = _drupal_ddp_form();
-//   return $content;
-// }
+function _drupal_ddp_settings_submit($form, &$form_state){
+  $use_with_ddp = $form_state['input']['drupal_ddp_settings_enabled_types'];
+
+  // If Content type is check to be used with Drupal DDP,
+  // set the correct variable value
+  foreach($use_with_ddp as $key => $val){
+    if(isset($val)){
+      variable_set('drupal_ddp_enabled_' . $key, 1);
+    }else{
+      variable_set('drupal_ddp_enabled_' . $key, 0);
+    }
+  }
+}
+
+
 
 /**
  * Implements hook_node_save().
  */
 function drupal_ddp_node_presave($node) {
+  $content_types = node_type_get_types();
+  $use_with_ddp = array();
+
+  // If Drupal DDP is enabled for a content type, save that content type
+  // to an array
+  foreach($content_types as $key => $type){
+    if(variable_get('drupal_ddp_enabled_' . $key, 0) == 1){
+      $use_with_ddp[] = $key;
+    }
+  }
+
   // Send post data to our ddp node server.
-  if ($node->type == 'post') {
-    $ddp_client_url = 'http://localhost:8080/';
+  if(in_array($node->type, $use_with_ddp)){
+    $ddp_client_url = variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs');
 
     // Collect Post data.
     $data = '{"node":' . json_encode($node) . '}';
@@ -120,34 +166,11 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
     //
     // This checkbox is used to show or hide the custom settings form using
     // javascript (altering states of a container defined later).
-    $ddp_enabled = variable_get('drupal_ddp_enabled_' . $form['#node_type']->type, 0);
+
     $form['drupal_ddp']['drupal_ddp_enabled'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Use this content type with DDP Connect'),
-      '#default_value' => $ddp_enabled,
+      '#title' => t('Use this content type with Drupal DDP'),
+      '#default_value' => variable_get('drupal_ddp_enabled_' . $form['#node_type']->type, 0),
     );
-
-    // // This container will be used to store the whole form for our custom
-    // // settings. This way, showing/hiding the form using javascript is easier,
-    // // as only one element should be set visible.
-    // $form['drupal_ddp']['drupal_ddp_container'] = array(
-    //   '#type' => 'container',
-    //   '#parents' => array('drupal_ddp'),
-    //   '#states' => array(
-    //     'invisible' => array(
-    //       // If the checkbox is not enabled, show the container.
-    //       'input[name="drupal_ddp[enabled]"]' => array('checked' => FALSE),
-    //     ),
-    //   ),
-    // );
-
-    // // The string of this textfield will be shown as summary in the vertical
-    // // tab.
-    // $form['drupal_ddp']['drupal_ddp_container']['custom_setting'] = array(
-    //   '#type' => 'textfield',
-    //   '#title' => t('Use this setting instead'),
-    //   '#default_value' => 'I am a setting with a summary',
-    //   '#description' => t('As you type into this field, the summary will be updated in the tab.'),
-    // );
   }
 }
