@@ -120,7 +120,7 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
     //
     // This checkbox is used to show or hide the custom settings form using
     // javascript (altering states of a container defined later).
-    $ddp_enabled = variable_get('drupal_ddp_enabled' . $form['#node_type']->type, 0);
+    $ddp_enabled = variable_get('drupal_ddp_enabled_' . $form['#node_type']->type, 0);
     $form['drupal_ddp']['drupal_ddp_enabled'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use this content type with DDP Connect'),
