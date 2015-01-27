@@ -92,13 +92,13 @@ function _drupal_ddp_settings_submit($form, &$form_state) {
 }
 
 /**
- * Implements hook_node_save().
+ * Implements hook_node_insert().
  */
-function drupal_ddp_node_presave($node) {
+function drupal_ddp_node_insert($node) {
   $content_types = node_type_get_types();
   $use_with_ddp = array();
 
-  // If Drupal DDP is enabled for a content type, save that content type to an i
+  // If Drupal DDP is enabled for a content type, save that content type to an
   // array.
   foreach ($content_types as $key => $type) {
     if (variable_get('drupal_ddp_enabled_' . $key, 0) == 1) {
@@ -109,6 +109,7 @@ function drupal_ddp_node_presave($node) {
   // Send post data to our ddp node server.
   if (in_array($node->type, $use_with_ddp)) {
     $ddp_client_url = variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs');
+    $ddp_client_url = 'http://localhost:8080/';
 
     // Collect Post data.
     $data = '{"node":' . json_encode($node) . '}';
@@ -122,6 +123,37 @@ function drupal_ddp_node_presave($node) {
   }
 }
 
+/**
+ * Implements hook_node_update().
+ */
+function drupal_ddp_node_update($node) {
+  $content_types = node_type_get_types();
+  $use_with_ddp = array();
+
+  // If Drupal DDP is enabled for a content type, save that content type to an
+  // array.
+  foreach ($content_types as $key => $type) {
+    if (variable_get('drupal_ddp_enabled_' . $key, 0) == 1) {
+      $use_with_ddp[] = $key;
+    }
+  }
+
+  // Send post data to our ddp node server.
+  if (in_array($node->type, $use_with_ddp)) {
+    $ddp_client_url = variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs');
+    $ddp_client_url = 'http://localhost:8080/';
+
+    // Collect Post data.
+    $data = '{"node":' . json_encode($node) . '}';
+
+    $options = array(
+      'method' => 'POST',
+      'data' => $data,
+      'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
+    );
+    $result = drupal_http_request($ddp_client_url, $options);
+  }
+}
 
 /**
  * Implements hook_form_alter().

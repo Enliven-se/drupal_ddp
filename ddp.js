@@ -7,7 +7,7 @@ var app = express();
 
 var ddpclient = new DDPClient({
   // host: "localhost",
-  // port: 3000,
+  port: 3000,
   // autoReconnect: true,
   // autoReconnectTimer: 500,
   // ssl: false,
@@ -26,7 +26,7 @@ app.post('/', function(req, res, next) {
   console.log(req.body);
 
   ddpclient.call(
-    'Post',
+    'DrupalSaveNode',
     [req.body]
   );
 
