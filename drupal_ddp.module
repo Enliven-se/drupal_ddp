@@ -1,10 +1,4 @@
 <?php
-
-/**
- * @file
- * Support module for Drupal DDP.
- */
-
 /**
  * Implements hook_menu().
  */
@@ -165,10 +159,6 @@ function _drupal_ddp_send($original_node){
   if(isset($original_node->delete_node) && ($original_node->delete_node)){
     $node->delete_node = TRUE;
   }
-
-  // Debug output
-  dpm($original_node);
-  dpm($node);
 
   $ddp_client_url = variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs');
   $ddp_client_url = 'http://localhost:8080/';
