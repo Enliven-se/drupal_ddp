@@ -36,11 +36,17 @@ function _drupal_ddp_form() {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-  $form['drupal_ddp_settings']['drupal_ddp_settings_meteor_socket'] = array(
+  $form['drupal_ddp_settings']['drupal_ddp_settings_ddp_server_url'] = array(
     '#type' => 'textfield',
-    '#title' => t('SockJS path for Meteor application'),
-    '#default_value' => variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs'),
-    '#description' => t('Enter the /sockjs address of your Meteor application. This is usually the URL to your Meteor application followed by /sockjs.'),
+    '#title' => t('Drupal DDP node server URL'),
+    '#default_value' => variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080'),
+    '#description' => t('Enter the full URL to access your Drupal DDP node sever (ddp.js)'),
+  );
+  $form['drupal_ddp_settings']['drupal_ddp_settings_meteor_host_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Meteor app URL'),
+    '#default_value' => variable_get('drupal_ddp_settings_meteor_host_url', 'http://localhost:3000'),
+    '#description' => t('Enter the full URL to access your Meteor application, including port number.'),
   );
 
   $content_types = node_type_get_types();
@@ -157,9 +163,7 @@ function _use_with_ddp($content_type){
  * Enables a node to be sent to node server.
  */
 function _drupal_ddp_send($content){
-  $ddp_client_url = variable_get('drupal_ddp_settings_meteor_socket', 'http://localhost:3000/sockjs');
-  $ddp_client_url = 'http://localhost:8080/';
-
+  $ddp_client_url = variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080');
   if($content->ddp_type == 'node'){
     // Load the node.
     // This gets around the issue of files not
