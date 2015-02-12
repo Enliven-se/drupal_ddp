@@ -1,5 +1,8 @@
 #Drupal DDP#
-This module acts as a DDP (Distributed Data Protocol) client, allowing Drupal to send new and updated node data to a Meteor application. Setup allows configuration of which content types push to Meteor apps.
+This module acts as a DDP (Distributed Data Protocol) client,
+allowing Drupal to send new and updated node data to a Meteor application. 
+
+Setup allows configuration of which content types push to Meteor apps.
 
 Drupal DDP requires a node server using Node DDP Client.
 
