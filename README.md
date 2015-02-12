@@ -11,6 +11,7 @@ Development of this module is sponsored by hb5
 ----
 
 ###DDP Magic###
-Sends Nodes, Taxonomies, and Users (Coming soon) to DDP server on Insert, Update, and Delete.
+Sends Nodes, Taxonomies, and Users (Coming soon) to DDP 
+server on Insert, Update, and Delete.
 
 The entire node object is sent to Node Server as a JSON Object.
