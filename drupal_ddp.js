@@ -1,8 +1,13 @@
 /**
+ * @file
+ * Drupal DDP Javascript file.
+ */
+
+/**
  * Update the summary for the module's vertical tab.
  */
 (function ($) {
-  Drupal.behaviors.vertical_tabs_exampleFieldsetSummaries = {
+  Drupal.behaviors.vertical_tabs_ddp_summary = {
     attach: function (context) {
       // Use the fieldset class to identify the vertical tab element.
       $('fieldset#edit-drupal-ddp', context).drupalSetSummary(function (context) {

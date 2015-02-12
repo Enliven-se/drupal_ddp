@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @file
+ * Drupal DDP Module configuration and settings.
+ */
+
 /**
  * Implements hook_menu().
  */

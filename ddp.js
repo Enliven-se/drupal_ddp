@@ -1,3 +1,8 @@
+/**
+ * @file
+ * DDP Node Server.
+ */
+
 // Setup server to respond to Drupal post submissions.
 var express = require('express');
 var bodyParser = require('body-parser');
