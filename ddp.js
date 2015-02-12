@@ -34,7 +34,9 @@ app.post('/', function(req, res, next) {
 });
 
 ddpclient.connect(function(err) {
-  if (err) throw new Error('DDP connection error!');
+  if (err) {
+    throw new Error('DDP connection error!');
+  }
   console.log('Connected!');
 });
 
@@ -47,4 +49,3 @@ console.log('Listening for data on port: 8080');
 ddpclient.on('message', function (msg) {
   console.log("ddp message: " + msg);
 });
-
