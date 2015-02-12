@@ -105,8 +105,8 @@ function drupal_ddp_node_insert($node) {
   $node->ddp_type = 'node';
 
   // Send post data to our ddp node server.
-  if (_use_with_ddp($node->type)) {
-    _drupal_ddp_send($node);
+  if (drupal_ddp_use_with_ddp($node->type)) {
+    drupal_ddp_send_content($node);
   }
 }
 
@@ -118,8 +118,8 @@ function drupal_ddp_node_update($node) {
   $node->ddp_type = 'node';
 
   // Send post data to our ddp node server.
-  if (_use_with_ddp($node->type)) {
-    _drupal_ddp_send($node);
+  if (drupal_ddp_use_with_ddp($node->type)) {
+    drupal_ddp_send_content($node);
   }
 }
 
@@ -135,15 +135,15 @@ function drupal_ddp_node_delete($node) {
   $node->delete_content = TRUE;
 
   // Send post data to our ddp node server.
-  if (_use_with_ddp($node->type)) {
-    _drupal_ddp_send($node);
+  if (drupal_ddp_use_with_ddp($node->type)) {
+    drupal_ddp_send_content($node);
   }
 }
 
 /**
  * Checks if content type is set to be used with Drupal DDP.
  */
-function _use_with_ddp($content_type) {
+function drupal_ddp_use_with_ddp($content_type) {
   $content_types = node_type_get_types();
   $use_with_ddp = array();
 
@@ -166,7 +166,7 @@ function _use_with_ddp($content_type) {
 /**
  * Enables a node to be sent to node server.
  */
-function _drupal_ddp_send($content) {
+function drupal_ddp_send_content($content) {
   $ddp_client_url = variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080');
   if ($content->ddp_type == 'node') {
     // Load the node.
@@ -266,7 +266,7 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
 function drupal_ddp_taxonomy_term_insert($term) {
   $term->ddp_type = 'taxonomy';
   $term->is_new = TRUE;
-  _drupal_ddp_send($term);
+  drupal_ddp_send_content($term);
 }
 
 /**
@@ -275,7 +275,7 @@ function drupal_ddp_taxonomy_term_insert($term) {
 function drupal_ddp_taxonomy_term_update($term) {
   $term->ddp_type = 'taxonomy';
   $term->is_new = FALSE;
-  _drupal_ddp_send($term);
+  drupal_ddp_send_content($term);
 }
 
 /**
@@ -285,5 +285,5 @@ function drupal_ddp_taxonomy_term_delete($term) {
   $term->ddp_type = 'taxonomy';
   $term->is_new = FALSE;
   $term->delete_content = TRUE;
-  _drupal_ddp_send($term);
+  drupal_ddp_send_content($term);
 }
