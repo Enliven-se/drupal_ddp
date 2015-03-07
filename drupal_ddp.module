@@ -142,6 +142,10 @@ function drupal_ddp_node_delete($node) {
 
 /**
  * Checks if content type is set to be used with Drupal DDP.
+ *
+ * @param string
+    String value of content type.
+ * @return bool
  */
 function drupal_ddp_use_with_ddp($content_type) {
   $content_types = node_type_get_types();
@@ -164,10 +168,47 @@ function drupal_ddp_use_with_ddp($content_type) {
 }
 
 /**
+ * Implements hook_taxonomy_term_insert().
+ */
+function drupal_ddp_taxonomy_term_insert($term) {
+  $term->ddp_type = 'taxonomy';
+  $term->is_new = TRUE;
+  drupal_ddp_send_content($term);
+}
+
+/**
+ * Implements hook_taxonomy_term_update().
+ */
+function drupal_ddp_taxonomy_term_update($term) {
+  $term->ddp_type = 'taxonomy';
+  $term->is_new = FALSE;
+  drupal_ddp_send_content($term);
+}
+
+/**
+ * Implements hook_taxonomy_term_delete().
+ */
+function drupal_ddp_taxonomy_term_delete($term) {
+  $term->ddp_type = 'taxonomy';
+  $term->is_new = FALSE;
+  $term->delete_content = TRUE;
+  drupal_ddp_send_content($term);
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function drupal_ddp_user_insert(&$edit, $account, $category){
+  $account->ddp_type = 'user';
+  drupal_ddp_send_content($account);
+}
+
+/**
  * Enables a node to be sent to node server.
  */
 function drupal_ddp_send_content($content) {
   $ddp_client_url = variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080');
+  
   if ($content->ddp_type == 'node') {
     // Load the node.
     // This gets around the issue of files not
@@ -188,28 +229,18 @@ function drupal_ddp_send_content($content) {
       $node->delete_content = TRUE;
     }
 
-    // Collect Post data.
-    $data = '{"content":' . json_encode($node) . '}';
-
-    $options = array(
-      'method' => 'POST',
-      'data' => $data,
-      'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
-    );
-    drupal_http_request($ddp_client_url, $options);
+    $content = $node;
   }
 
-  if ($content->ddp_type == 'taxonomy') {
-    // Collect Post data.
-    $data = '{"content":' . json_encode($content) . '}';
+  // Create json document with data.
+  $data = '{"content":' . json_encode($content) . '}';
 
-    $options = array(
-      'method' => 'POST',
-      'data' => $data,
-      'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
-    );
-    drupal_http_request($ddp_client_url, $options);
-  }
+  $options = array(
+    'method' => 'POST',
+    'data' => $data,
+    'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
+  );
+  drupal_http_request($ddp_client_url, $options);
 }
 
 /**
@@ -258,32 +289,4 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
       '#default_value' => variable_get('drupal_ddp_enabled_' . $form['#node_type']->type, 0),
     );
   }
-}
-
-/**
- * Implements hook_taxonomy_term_insert().
- */
-function drupal_ddp_taxonomy_term_insert($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = TRUE;
-  drupal_ddp_send_content($term);
-}
-
-/**
- * Implements hook_taxonomy_term_update().
- */
-function drupal_ddp_taxonomy_term_update($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = FALSE;
-  drupal_ddp_send_content($term);
-}
-
-/**
- * Implements hook_taxonomy_term_delete().
- */
-function drupal_ddp_taxonomy_term_delete($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = FALSE;
-  $term->delete_content = TRUE;
-  drupal_ddp_send_content($term);
 }
