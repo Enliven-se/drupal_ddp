@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Drupal DDP Module configuration and settings.
@@ -98,54 +97,76 @@ function _drupal_ddp_settings_submit($form, &$form_state) {
 }
 
 /**
- * Implements hook_node_insert().
+ * Implements hook_entity_insert().
  */
-function drupal_ddp_node_insert($node) {
-  // Set the ddp_type to 'node' for nodes.
-  $node->ddp_type = 'node';
-
-  // Send post data to our ddp node server.
-  if (drupal_ddp_use_with_ddp($node->type)) {
-    drupal_ddp_send_content($node);
+function drupal_ddp_entity_insert($entity, $type) {
+  switch ($type) {
+    case 'node':
+      // Set the ddp_type to 'node'.
+      $entity->ddp_type = 'node';
+      // Send post data to our ddp node server.
+      if (drupal_ddp_use_with_ddp($entity->type)) { drupal_ddp_send_content($entity); }
+      break;
+    case 'taxonomy_term':
+      // Set the ddp_type to 'taxonomy' and
+      // also set 'is_new' to TRUE since taxonomies
+      // don't include that flag on insert.
+      $entity->ddp_type = 'taxonomy';
+      $entity->is_new = TRUE;
+      drupal_ddp_send_content($entity);
+      break;
   }
 }
 
 /**
- * Implements hook_node_update().
+ * Implements hook_entity_update().
  */
-function drupal_ddp_node_update($node) {
-  // Set the ddp_type to 'node' for nodes.
-  $node->ddp_type = 'node';
-
-  // Send post data to our ddp node server.
-  if (drupal_ddp_use_with_ddp($node->type)) {
-    drupal_ddp_send_content($node);
+function drupal_ddp_entity_update($entity, $type) {
+  switch ($type) {
+    case 'node':
+      // Set the ddp_type to 'node'.
+      $entity->ddp_type = 'node';
+      // Send post data to our ddp node server.
+      if (drupal_ddp_use_with_ddp($entity->type)) { drupal_ddp_send_content($entity); }
+      break;
+    case 'taxonomy_term':
+      // Set the ddp_type to 'taxonomy'.
+      $entity->ddp_type = 'taxonomy';
+      drupal_ddp_send_content($entity);
+      break;
   }
 }
 
 /**
- * Implements hook_node_delete().
+ * Implements hook_entity_delete().
  */
-function drupal_ddp_node_delete($node) {
-  // Set the ddp_type to 'node' for nodes.
-  $node->ddp_type = 'node';
+function drupal_ddp_entity_delete($entity, $type) {
+  // Set 'delete_content' flag to be used in Meteor.
+  $entity->delete_content = TRUE;
 
-  // Set a flag to tell the meteor app to delete
-  // this node.
-  $node->delete_content = TRUE;
-
-  // Send post data to our ddp node server.
-  if (drupal_ddp_use_with_ddp($node->type)) {
-    drupal_ddp_send_content($node);
+  switch ($type) {
+    case 'node':
+      // Set the ddp_type to 'node'.
+      $entity->ddp_type = 'node';
+      // Send post data to our ddp node server.
+      if (drupal_ddp_use_with_ddp($entity->type)) { drupal_ddp_send_content($entity); }
+      break;
+    case 'taxonomy_term':
+      // Set the ddp_type to 'taxonomy'.
+      $entity->ddp_type = 'taxonomy';
+      drupal_ddp_send_content($entity);
+      break;
   }
 }
 
 /**
  * Checks if content type is set to be used with Drupal DDP.
  *
- * @param string
-    String value of content type.
- * @return bool
+ * @param $content_type
+ *  String value of content type.
+ * @return
+ *  Returns TRUE if the $content_type can be
+ *  used with drupal_ddp
  */
 function drupal_ddp_use_with_ddp($content_type) {
   $content_types = node_type_get_types();
@@ -159,52 +180,15 @@ function drupal_ddp_use_with_ddp($content_type) {
     }
   }
 
-  if (in_array($content_type, $use_with_ddp)) {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
+  return in_array($content_type, $use_with_ddp) ? TRUE : FALSE;
 }
 
-/**
- * Implements hook_taxonomy_term_insert().
- */
-function drupal_ddp_taxonomy_term_insert($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = TRUE;
-  drupal_ddp_send_content($term);
-}
-
-/**
- * Implements hook_taxonomy_term_update().
- */
-function drupal_ddp_taxonomy_term_update($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = FALSE;
-  drupal_ddp_send_content($term);
-}
-
-/**
- * Implements hook_taxonomy_term_delete().
- */
-function drupal_ddp_taxonomy_term_delete($term) {
-  $term->ddp_type = 'taxonomy';
-  $term->is_new = FALSE;
-  $term->delete_content = TRUE;
-  drupal_ddp_send_content($term);
-}
-
-/**
- * Implements hook_user_insert().
- */
-function drupal_ddp_user_insert(&$edit, $account, $category){
-  $account->ddp_type = 'user';
-  drupal_ddp_send_content($account);
-}
 
 /**
  * Enables a node to be sent to node server.
+ *
+ * @param $content
+ *  An entity object.
  */
 function drupal_ddp_send_content($content) {
   $ddp_client_url = variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080');
@@ -215,7 +199,7 @@ function drupal_ddp_send_content($content) {
     // having a uri during an insert.
     $node = node_load($content->nid, NULL, TRUE);
 
-    // Set 'ddp_type' = 'node'
+    // Set ddp_type = node
     $node->ddp_type = 'node';
 
     // If node is new, set is_new to TRUE
