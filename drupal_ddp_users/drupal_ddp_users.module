@@ -8,13 +8,8 @@
  * Implements hook_entity_insert().
  */
 function drupal_ddp_users_entity_insert($entity, $type) {
-  if (function_exists('xdebug_break')) {
-    xdebug_break();
-  }
-
   switch ($type) {
     case 'user':
-      // user
     	$entity->ddp_type = 'user';
       drupal_ddp_send_content($entity);
       break;
@@ -25,13 +20,9 @@ function drupal_ddp_users_entity_insert($entity, $type) {
  * Implements hook_entity_update().
  */
 function drupal_ddp_users_entity_update($entity, $type) {
-  if (function_exists('xdebug_break')) {
-    xdebug_break();
-  }
-
   switch ($type) {
     case 'user':
-      // user
+      $entity->ddp_type = 'user';
       drupal_ddp_send_content($entity);
       break;
   }
@@ -41,16 +32,12 @@ function drupal_ddp_users_entity_update($entity, $type) {
  * Implements hook_entity_delete().
  */
 function drupal_ddp_users_entity_delete($entity, $type) {
-	if (function_exists('xdebug_break')) {
-    xdebug_break();
-  }
-
   // Set 'delete_content' flag to be used in Meteor.
   $entity->delete_content = TRUE;
 
   switch ($type) {
     case 'user':
-      // user
+      $entity->ddp_type = 'user';
       drupal_ddp_send_content($entity);
       break;
   }
