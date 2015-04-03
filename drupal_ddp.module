@@ -195,9 +195,18 @@ function drupal_ddp_send_content($content) {
   
   if ($content->ddp_type == 'node') {
     // Load the node.
-    // This gets around the issue of files not
-    // having a uri during an insert.
-    $node = node_load($content->nid, NULL, TRUE);
+    // This gets around an issue of cached data
+    // being returned by restws
+    entity_get_controller('node')->resetCache(array($content->nid));
+
+    // Get json from restws
+    $format = restws_format('json');
+    $name = 'node';
+    $id = $content->nid;
+    $op = 'view';
+
+    $json_string = drupal_ddp_handle_request($op, $format, $name, $id);
+    $node = json_decode($json_string['string']);
 
     // Set ddp_type = node
     $node->ddp_type = 'node';
@@ -272,5 +281,195 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
       '#title' => t('Use this content type with Drupal DDP'),
       '#default_value' => variable_get('drupal_ddp_enabled_' . $form['#node_type']->type, 0),
     );
+  }
+}
+
+
+/**
+ * Handles a request and returns it as a variable instead of printing it.
+ * Modified from restws_handle_request() in restws.module
+ *
+ * @param string $op
+ *   One of 'create', 'update', 'delete' or 'view'.
+ */
+function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $payload = NULL) {
+  if ($resource = restws_resource_controller($resource_name)) {
+    // Allow other modules to change the web service request or react upon it.
+    $request = array(
+      'op' => &$op,
+      'format' => &$format,
+      'resource' => &$resource,
+      'id' => &$id,
+      'payload' => &$payload,
+    );
+    drupal_alter('restws_request', $request);
+
+    // Since there is no access callback for query we need to use view.
+    $access_op = $op == 'query' ? 'view' : $op;
+    $return = array();
+    if (user_access('access resource ' . $resource_name) && $resource->access($access_op, $id)) {
+      try {
+        $method = $op . 'Resource';
+        if ($op == 'create') {
+          $return['string'] = $format->$method($resource, $payload);
+          $return['header'] = array('Status', '201 Created');
+        }
+        elseif ($op == 'query') {
+          if (!$resource instanceof RestWSQueryResourceControllerInterface) {
+            throw new RestWSException('Quering not available for this resources', 501);
+          }
+          $return['string'] = $format->$method($resource, $payload);
+        }
+        else {
+           $return['string'] = $format->$method($resource, $id, $payload);
+        }
+        $return ['header'] = array('Content-Type', $format->mimeType());
+      }
+      catch (RestWSException $e) {
+        $return['errors'] = check_plain($e->getHTTPError()) . ': ' . check_plain($e->getMessage());
+        $return['header'] = array('Status', $e->getHTTPError());
+      }
+    }
+    else {
+      $return['string'] = '403 Forbidden';
+      $return['header'] = array('Status', '403 Forbidden');
+      watchdog('access denied', check_plain($_GET['q']), NULL, WATCHDOG_WARNING);
+    }
+    return $return;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_restws_response_alter().
+ *
+ * Alter the outgoing response.
+ *
+ * @param mixed $response
+ *   The response data being returned by the REST service (not yet serialized).
+ * @param string $function
+ *   The function being called on the REST service.
+ * @param string $format_name
+ *   The name of the format serializing the response.
+ *
+ * related issue https://drupal.org/node/2024603
+ */
+function drupal_ddp_restws_response_alter(&$response, $function, $format_name, $resourceController) {
+  // specific modifications based common request type
+  if (($function == 'viewResource' || $function == 'queryResource') && $format_name == 'json') {
+    // query response is nested, direct access is not
+    if ($function == 'queryResource') {
+      foreach ($response['list'] as &$object) {
+        drupal_ddp_restws_deep_load($object);
+      }
+    }
+    else {
+      drupal_ddp_restws_deep_load($response);
+    }
+  }
+}
+
+/**
+ * Callback to perform deep load on a base entity.
+ *
+ * We're performing a deep-reference-load on referenced
+ * files and taxonomy fields in order to get the data for
+ * those fields rather than a resource callback.
+ *
+ * @param $response
+ *   response about to be sent back for the RestWS query
+ * @return NULL
+ *   this will load additional items into the response, filtering their
+ *   fields based on account access to the deep loaded items.
+ */
+function drupal_ddp_restws_deep_load(&$response) {
+  // build list of allowed entity types to deep pull down
+  $allowed = array('taxonomy_term', 'file');
+  // $allowed = array();
+
+  // allow for deep loading of resources
+  foreach ($response as $key => &$val) {
+    // check for a single resource verses many
+    if (is_array($val) && isset($val[0]['id'])) {
+      // loop through items loading them in
+      foreach ($val as &$item) {
+        if (in_array($item['resource'], $allowed)) {
+          // load the entity
+          $entity = entity_load_single($item['resource'], $item['id']);
+          // ensure they can view this specific item
+          if (entity_access('view', $item['resource'], $entity)) {
+            // create a meta wrapper to act on for entity
+            $wrapper = entity_metadata_wrapper($item['resource'], $entity);
+            // filter out these values
+            $wrap = restws_property_access_filter($wrapper);
+            $eary = (array) $entity;
+            foreach ($eary as $property => $value) {
+              // value needs to be removed as it didn't pass wrapper validation
+              if (!isset($wrap[$property])) {
+                unset($eary[$property]);
+              }
+            }
+            // add values based on wrapper passing correctly
+            $item = $eary;
+          }
+        }
+      }
+    }
+    // Has a file reference
+    elseif (is_array($val) && isset($val[0]['file'])) {
+      // Loop through items loading them in.
+      foreach ($val as &$item) {
+        if (in_array($item['file']['resource'], $allowed)) {
+          // Load the entity
+          $entity = entity_load_single($item['file']['resource'], $item['file']['id']);
+          $file_url = file_create_url($entity->uri);
+          
+          // Ensure they can view this specific item.
+          if (entity_access('view', $item['file']['resource'], $entity)) {
+            // Create a meta wrapper to act on for entity.
+            $wrapper = entity_metadata_wrapper($item['file']['resource'], $entity);
+            // Filter out these values.
+            $wrap = restws_property_access_filter($wrapper);
+
+            $eary = (array) $entity;
+            foreach ($eary as $property => $value) {
+              // value needs to be removed as it didn't pass wrapper validation
+              if (!isset($wrap[$property])) {
+                unset($eary[$property]);
+              }
+            }
+            // Add file URL to resource.
+            $eary['url'] = $file_url;
+            // Add values based on wrapper passing correctly.
+            $item['file'] = $eary;
+          }
+        }
+      }
+    }
+    elseif (is_array($val) && isset($val['id'])) {
+      if (in_array($val['resource'], $allowed)) {
+        // load the entity
+        $entity = entity_load_single($val['resource'], $val['id']);
+        // ensure they can view this specific item
+        if (entity_access('view', $val['resource'], $entity)) {
+          // create a meta wrapper to act on for entity
+          $wrapper = entity_metadata_wrapper($val['resource'], $entity);
+          // filter out fields
+          $wrap = restws_property_access_filter($wrapper);
+          // typecast entity as array for property evaluation
+          $eary = (array) $entity;
+          foreach ($eary as $property => $value) {
+            // value needs to be removed as it didn't pass wrapper validation
+            if (!isset($wrap[$property])) {
+              unset($eary[$property]);
+            }
+          }
+          // add values based on wrapper passing correctly
+          $val = $eary;
+        }
+      }
+    }
   }
 }
