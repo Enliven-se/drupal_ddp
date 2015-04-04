@@ -54,16 +54,18 @@ function _drupal_ddp_form() {
     '#description' => t('Enter the full URL to access your Meteor application, including port number.'),
   );
 
-
   $content_types = node_type_get_types();
-  $use_with_ddp = $types = array();
+  $use_with_ddp = $types = $sync_nodes = array();
 
   foreach ($content_types as $key => $type) {
+    // Generate array of all content types.
     $types[$key] = $type->name;
 
-    // Gather up which content types should insert and update Meteor.
+    // Get the keys array keys of content types that can be
+    // be used with Drupal DDP.
     if (variable_get('drupal_ddp_enabled_' . $key, 0) == 1) {
       $use_with_ddp[] = $key;
+      $sync_nodes[$key] = $type->name;
     }
   }
 
@@ -80,18 +82,50 @@ function _drupal_ddp_form() {
     '#title' => t('Sync existing content with Meteor'),
     '#description' => t('Push existing data over to Meteor. Make sure that the DDP server & your Meteor app are running.'),
     '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['drupal_ddp_settings']['sync']['nodes'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Nodes'),
+    '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-  $form['drupal_ddp_settings']['sync']['content_type'] = array(
+
+  $form['drupal_ddp_settings']['sync']['nodes']['sync_content_type'] = array(
     '#title' => t('Sync a Content Type'),
     '#type' => 'radios',
-    '#options' => $types,
-    '#default_value' => $use_with_ddp,
+    '#options' => $sync_nodes,
   );
-  $form['drupal_ddp_settings']['sync']['nodes'] = array(
+  $form['drupal_ddp_settings']['sync']['nodes']['submit'] = array(
     '#type' => 'submit', 
     '#value' => t('Sync Nodes'), 
     '#submit' => array('drupal_ddp_sync_existing_nodes'),
+  );
+
+  // Load list of Taxonomies
+  $taxonomies = taxonomy_get_vocabularies();
+  $sync_taxonomies = array();
+  foreach ($taxonomies as $taxonomy) {
+    $sync_taxonomies[$taxonomy->machine_name] = $taxonomy->name;
+  }
+  // dpm($sync_taxonomies);
+
+  $form['drupal_ddp_settings']['sync']['taxonomies'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Taxonomies'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['drupal_ddp_settings']['sync']['taxonomies']['sync_vocab'] = array(
+    '#title' => t('Sync Taxonomy Vocabulary'),
+    '#type' => 'radios',
+    '#options' => $sync_taxonomies,
+  );
+  $form['drupal_ddp_settings']['sync']['taxonomies']['submit'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Sync Taxonomy'), 
+    '#submit' => array('drupal_ddp_sync_existing_taxonomies'),
   );
 
   $form['#submit'][] = '_drupal_ddp_settings_submit';
@@ -108,7 +142,7 @@ function _drupal_ddp_settings_submit($form, &$form_state) {
   // If Content type is check to be used with Drupal DDP,
   // set the correct variable value.
   foreach ($use_with_ddp as $key => $val) {
-    if (isset($val)) {
+    if (!empty($val) || $val != 0) {
       variable_set('drupal_ddp_enabled_' . $key, 1);
     }
     else {
@@ -513,19 +547,37 @@ function drupal_ddp_get_all_nids_of_type($content_type) {
  */
 function drupal_ddp_sync_existing_nodes($form, &$form_state) {
   // If value is array, then no value was chosen.
-  if(is_array($form_state['values']['content_type'])) {
+  $content_type_to_sync = $form_state['values']['sync_content_type'];
+  if(empty($content_type_to_sync)) {
     drupal_set_message(t('No content types were chosen.'), 'error');
     return;
   }
-  $content_type_to_sync = $form_state['values']['content_type'];
-
-  $function = 'batch_drupal_ddp_sync_nodes';
 
   // Reset counter for debug information.
   $_SESSION['http_request_count'] = 0;
 
   // Execute the function named batch_drupal_ddp_sync_nodes.
   $batch = drupal_ddp_batch_sync_nodes($content_type_to_sync);
+  batch_set($batch);
+}
+
+/**
+ * Sync existing taxonomy term data with meteor app.
+ */
+function drupal_ddp_sync_existing_taxonomies($form, &$form_state) {
+  // If value is array, then no value was chosen.
+  $vocab_name = $form_state['values']['sync_vocab'];
+  if(empty($vocab_name)) {
+    drupal_set_message(t('No content types were chosen.'), 'error');
+    return;
+  }
+  $vocab = taxonomy_vocabulary_machine_name_load($vocab_name);
+
+  // Reset counter for debug information.
+  $_SESSION['http_request_count'] = 0;
+
+  // Execute the function named batch_drupal_ddp_sync_nodes.
+  $batch = drupal_ddp_batch_sync_taxonomy($vocab);
   batch_set($batch);
 }
 
@@ -547,9 +599,41 @@ function drupal_ddp_batch_sync_nodes($content_type) {
     // - The function to call.
     // - An array of arguments to that function.
     $operations[] = array(
-      '_drupal_ddp_batch_operation',
+      '_drupal_ddp_batch_node_operation',
       array(
         $nids[$i],
+        t('(Operation @operation)', array('@operation' => $i + 1)),
+      ),
+    );
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'drupal_ddp_batch_finished',
+  );
+  return $batch;
+}
+
+/**
+ * Batch Definition: Load and save all terms in a vocab.
+ */
+function drupal_ddp_batch_sync_taxonomy($vocab) {
+  $terms = taxonomy_get_tree($vocab->vid);
+  $num_operations = count($terms);
+  drupal_set_message(t('Syncing @num terms in "@vocab"', array('@num' => $num_operations, '@vocab' => $vocab->name)));
+
+  $operations = array();
+  // Each operation in the operations array means at least one new HTTP request,
+  // running Drupal from scratch to accomplish the operation. If the operation
+  // returns with $context['finished'] != TRUE, then it will be called again.
+  // In this example, $context['finished'] is always TRUE.
+  for ($i = 0; $i < $num_operations; $i++) {
+    // Each operation is an array consisting of
+    // - The function to call.
+    // - An array of arguments to that function.
+    $operations[] = array(
+      '_drupal_ddp_batch_taxonomy_operation',
+      array(
+        $terms[$i],
         t('(Operation @operation)', array('@operation' => $i + 1)),
       ),
     );
@@ -566,18 +650,16 @@ function drupal_ddp_batch_sync_nodes($content_type) {
  *
  * Load a node and save it to invoke hook_entity_update().
  */
-function _drupal_ddp_batch_operation($nid, $operation_details, &$context) {
+function _drupal_ddp_batch_node_operation($nid, $operation_details, &$context) {
   $node = node_load($nid, NULL, TRUE);
 
   // Store some results for post-processing in the 'finished' callback.
   // The contents of 'results' will be available as $results in the
-  // 'finished' function (in this example, batch_example_finished()).
+  // 'finished' function.
   $context['results'][] = $node->nid . ' : ' . check_plain($node->title);
 
   // Optional message displayed under the progressbar.
   $context['message'] = t('Syncing node "@title"', array('@title' => $node->title)) . ' ' . $operation_details;
-
-  // watchdog(t('Testing things.  @nid loaded and saved', array('@nid' => $nid)));
 
   // Save node.
   node_save($node);
@@ -586,13 +668,34 @@ function _drupal_ddp_batch_operation($nid, $operation_details, &$context) {
 }
 
 /**
- * Batch 'finished' callback used by both batch 1 and batch 2.
+ * Batch operation for syncing nodes.
+ *
+ * Save a taxonomy to invoke hook_entity_update().
+ */
+function _drupal_ddp_batch_taxonomy_operation($term, $operation_details, &$context) {
+  // Store some results for post-processing in the 'finished' callback.
+  // The contents of 'results' will be available as $results in the
+  // 'finished' function.
+  $context['results'][] = $term->tid . ' : ' . check_plain($term->name);
+
+  // Optional message displayed under the progressbar.
+  $context['message'] = t('Syncing term "@title"', array('@title' => $node->name)) . ' ' . $operation_details;
+
+  // Save Term.
+  taxonomy_term_save($term);
+
+  _drupal_ddp_update_http_requests();
+}
+
+/**
+ * Batch 'finished' callback used by drupal_ddp_batch_sync_nodes and
+ * drupal_ddp_batch_sync_taxonomy.
  */
 function drupal_ddp_batch_finished($success, $results, $operations) {
   if ($success) {
     // Here we could do something meaningful with the results.
     // We just display the number of nodes we processed...
-    drupal_set_message(t('@count nodes synced.', array('@count' => count($results))));
+    drupal_set_message(t('@count items synced.', array('@count' => count($results))));
   }
   else {
     // An error occurred.
