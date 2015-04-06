@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Drupal DDP Users module
+ * Drupal DDP Users module.
  */
 
 /**
@@ -41,4 +41,91 @@ function drupal_ddp_users_entity_delete($entity, $type) {
       drupal_ddp_send_content($entity);
       break;
   }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function drupal_ddp_users_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == '_drupal_ddp_form') {
+    $form['drupal_ddp_settings']['sync']['users'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Users'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    $form['drupal_ddp_settings']['sync']['users']['submit'] = array(
+      '#type' => 'submit', 
+      '#value' => t('Sync All Users'), 
+      '#submit' => array('drupal_ddp_sync_existing_users'),
+    );
+  }
+}
+/**
+ * Sync existing node data with meteor app.
+ */
+function drupal_ddp_sync_existing_users($form, &$form_state) {
+  $users = entity_load('user');
+
+  // Remove anonymous user (user 0)
+  unset($users[0]);
+
+  // Set array keys to numerical sequence
+  $users = array_values($users);
+  
+  // Reset counter for debug information.
+  $_SESSION['http_request_count'] = 0;
+
+  // Execute the function named batch_drupal_ddp_sync_nodes.
+  $batch = drupal_ddp_batch_sync_users($users);
+  batch_set($batch);
+}
+
+/**
+ * Batch Definition: Save all users.
+ */
+function drupal_ddp_batch_sync_users($users) {
+  $num_operations = count($users);
+
+  drupal_set_message(t('Syncing @num users', array('@num' => $num_operations)));
+
+  $operations = array();
+  // Each operation in the operations array means at least one new HTTP request,
+  // running Drupal from scratch to accomplish the operation.
+  for ($i = 0; $i < $num_operations; $i++) {
+    // Each operation is an array consisting of
+    // - The function to call.
+    // - An array of arguments to that function.
+    $operations[] = array(
+      '_drupal_ddp_batch_users_operation',
+      array(
+        $users[$i],
+        t('(Operation @operation)', array('@operation' => $i + 1)),
+      ),
+    );
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'drupal_ddp_batch_finished',
+  );
+  return $batch;
+}
+
+/**
+ * Batch operation for syncing users.
+ *
+ * Save a user to invoke hook_entity_update().
+ */
+function _drupal_ddp_batch_users_operation($user, $operation_details, &$context) {
+  // Store some results for post-processing in the 'finished' callback.
+  $context['results'][] = $user->uid . ' : ' . check_plain($user->name);
+
+  // Message displayed under the progressbar.
+  $context['message'] = t('Syncing user "@name"', array('@name' => $user->name)) . ' ' . $operation_details;
+
+  // Save User object.
+  user_save($user);
+
+  _drupal_ddp_update_http_requests();
 }
