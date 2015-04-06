@@ -623,9 +623,7 @@ function drupal_ddp_batch_sync_taxonomy($vocab) {
 
   $operations = array();
   // Each operation in the operations array means at least one new HTTP request,
-  // running Drupal from scratch to accomplish the operation. If the operation
-  // returns with $context['finished'] != TRUE, then it will be called again.
-  // In this example, $context['finished'] is always TRUE.
+  // running Drupal from scratch to accomplish the operation.
   for ($i = 0; $i < $num_operations; $i++) {
     // Each operation is an array consisting of
     // - The function to call.
@@ -658,7 +656,7 @@ function _drupal_ddp_batch_node_operation($nid, $operation_details, &$context) {
   // 'finished' function.
   $context['results'][] = $node->nid . ' : ' . check_plain($node->title);
 
-  // Optional message displayed under the progressbar.
+  // Message displayed under the progressbar.
   $context['message'] = t('Syncing node "@title"', array('@title' => $node->title)) . ' ' . $operation_details;
 
   // Save node.
@@ -668,9 +666,9 @@ function _drupal_ddp_batch_node_operation($nid, $operation_details, &$context) {
 }
 
 /**
- * Batch operation for syncing nodes.
+ * Batch operation for syncing terms.
  *
- * Save a taxonomy to invoke hook_entity_update().
+ * Save a taxonomy term to invoke hook_entity_update().
  */
 function _drupal_ddp_batch_taxonomy_operation($term, $operation_details, &$context) {
   // Store some results for post-processing in the 'finished' callback.
@@ -678,8 +676,8 @@ function _drupal_ddp_batch_taxonomy_operation($term, $operation_details, &$conte
   // 'finished' function.
   $context['results'][] = $term->tid . ' : ' . check_plain($term->name);
 
-  // Optional message displayed under the progressbar.
-  $context['message'] = t('Syncing term "@title"', array('@title' => $node->name)) . ' ' . $operation_details;
+  // Message displayed under the progressbar.
+  $context['message'] = t('Syncing term "@title"', array('@title' => $term->name)) . ' ' . $operation_details;
 
   // Save Term.
   taxonomy_term_save($term);
