@@ -2,6 +2,5 @@ name = Drupal DDP Users
 description = Send user data to your Meteor app <br /><strong>IMPORTANT!</strong><br />Make sure you understand the implications of enabling the <a href="https://www.drupal.org/project/password_bcrypt">password_bcrypt module</a>.
 package = DDP
 core = 7.x
-configure = admin/config/ddp-connect
+configure = admin/config/drupal-ddp
 dependencies[] = drupal_ddp
-dependencies[] = password_bcrypt
