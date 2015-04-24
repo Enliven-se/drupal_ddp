@@ -8,7 +8,7 @@
  * Implements hook_menu().
  */
 function drupal_ddp_menu() {
-  $items['admin/config/development/ddp-connect'] = array(
+  $items['admin/config/development/drupal-ddp'] = array(
     'title' => 'Drupal DDP Settings',
     'description' => 'Settings related to Drupal DDP module.',
     'page callback' => 'drupal_get_form',
