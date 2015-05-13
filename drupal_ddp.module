@@ -416,26 +416,25 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = null, $pa
     $access_op = $op == 'query' ? 'view' : $op;
     $return = array();
       
-      try {
-        $method = $op . 'Resource';
-        if ($op == 'create') {
-          $return['string'] = $format->$method($resource, $payload);
-          $return['header'] = array('Status', '201 Created');
-        } elseif ($op == 'query') {
-          if (!$resource instanceof RestWSQueryResourceControllerInterface) {
-            throw new RestWSException('Quering not available for this resources', 501);
-          }
-          $return['string'] = $format->$method($resource, $payload);
-        } else {
-           $return['string'] = $format->$method($resource, $id, $payload);
+    try {
+      $method = $op . 'Resource';
+      if ($op == 'create') {
+        $return['string'] = $format->$method($resource, $payload);
+        $return['header'] = array('Status', '201 Created');
+      } elseif ($op == 'query') {
+        if (!$resource instanceof RestWSQueryResourceControllerInterface) {
+          throw new RestWSException('Quering not available for this resources', 501);
         }
-        $return ['header'] = array('Content-Type', $format->mimeType());
+        $return['string'] = $format->$method($resource, $payload);
+      } else {
+         $return['string'] = $format->$method($resource, $id, $payload);
       }
-      catch (RestWSException $e) {
-        $return['errors'] = check_plain($e->getHTTPError()) . ': ' . check_plain($e->getMessage());
-        $return['header'] = array('Status', $e->getHTTPError());
-        watchdog('drupal_ddp', $return['errors'], null, WATCHDOG_WARNING);
-      }
+      $return ['header'] = array('Content-Type', $format->mimeType());
+    }
+    catch (RestWSException $e) {
+      $return['errors'] = check_plain($e->getHTTPError()) . ': ' . check_plain($e->getMessage());
+      $return['header'] = array('Status', $e->getHTTPError());
+      watchdog('drupal_ddp', $return['errors'], null, WATCHDOG_WARNING);
     }
 
     return $return;
