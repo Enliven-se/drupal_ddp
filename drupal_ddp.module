@@ -51,14 +51,22 @@ function _drupal_ddp_form() {
   $form['drupal_ddp_settings']['drupal_ddp_settings_ddp_server_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Drupal DDP node server URL'),
-    '#default_value' => variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080'),
-    '#description' => t('Enter the full URL to access your Drupal DDP node sever (ddp.js)'),
+    '#default_value' => variable_get('drupal_ddp_settings_ddp_server_url',
+                                     'http://localhost:8080'
+                                     ),
+    '#description' => t('Enter the full URL to access 
+                         your Drupal DDP node sever (ddp.js)'
+                         ),
   );
   $form['drupal_ddp_settings']['drupal_ddp_settings_meteor_host_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Meteor app URL'),
-    '#default_value' => variable_get('drupal_ddp_settings_meteor_host_url', 'http://localhost:3000'),
-    '#description' => t('Enter the full URL to access your Meteor application, including port number.'),
+    '#default_value' => variable_get('drupal_ddp_settings_meteor_host_url',
+                                     'http://localhost:3000'
+                                     ),
+    '#description' => t('Enter the full URL to access your 
+                         Meteor application, including port number.'
+                         ),
   );
 
   $content_types = node_type_get_types();
@@ -87,7 +95,9 @@ function _drupal_ddp_form() {
   $form['drupal_ddp_settings']['sync'] = array(
     '#type' => 'fieldset',
     '#title' => t('Sync existing content with Meteor'),
-    '#description' => t('Push existing data over to Meteor. Make sure that the DDP server & your Meteor app are running.'),
+    '#description' => t('Push existing data over to Meteor. 
+                         Make sure that the DDP server & 
+                         your Meteor app are running.'),
     '#collapsible' => true,
     '#collapsed' => true,
   );
@@ -116,7 +126,6 @@ function _drupal_ddp_form() {
   foreach ($taxonomies as $taxonomy) {
     $sync_taxonomies[$taxonomy->machine_name] = $taxonomy->name;
   }
-  // dpm($sync_taxonomies);
 
   $form['drupal_ddp_settings']['sync']['taxonomies'] = array(
     '#type' => 'fieldset',
@@ -287,7 +296,10 @@ function drupal_ddp_use_with_ddp($content_type) {
  *  An entity object.
  */
 function drupal_ddp_send_content($content) {
-  $ddp_client_url = variable_get('drupal_ddp_settings_ddp_server_url', 'http://localhost:8080');
+  $ddp_client_url = variable_get(
+    'drupal_ddp_settings_ddp_server_url', 
+    'http://localhost:8080'
+  );
   
   if ($content->ddp_type == 'node') {
     // Load the node.
@@ -310,12 +322,12 @@ function drupal_ddp_send_content($content) {
     // If node is new, set is_new to TRUE
     // on the loaded node.
     if (isset($content->is_new) && ($content->is_new)) {
-      $node->is_new = TRUE;
+      $node->is_new = true;
     }
 
     // If node has been deleted, set delete_node to TRUE.
     if (isset($content->delete_content) && ($content->delete_content)) {
-      $node->delete_content = TRUE;
+      $node->delete_content = true;
     }
 
     $content = $node;
@@ -348,8 +360,8 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
     $form['drupal_ddp'] = array(
       '#type' => 'fieldset',
       '#title' => t('Drupal DDP'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsible' => true,
+      '#collapsed' => true,
       // The #group value must match the name of the vertical tabs element.
       // In most cases, this is 'additional_settings'.
       '#group' => 'additional_settings',
@@ -386,9 +398,9 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
  * Modified from restws_handle_request() in restws.module
  *
  * @param string $op
- *   One of 'create', 'update', 'delete' or 'view'.
+ *  One of 'create', 'update', 'delete' or 'view'.
  */
-function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $payload = NULL) {
+function drupal_ddp_handle_request($op, $format, $resource_name, $id = null, $payload = null) {
   if ($resource = restws_resource_controller($resource_name)) {
     // Allow other modules to change the web service request or react upon it.
     $request = array(
@@ -409,14 +421,12 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $pa
         if ($op == 'create') {
           $return['string'] = $format->$method($resource, $payload);
           $return['header'] = array('Status', '201 Created');
-        }
-        elseif ($op == 'query') {
+        } elseif ($op == 'query') {
           if (!$resource instanceof RestWSQueryResourceControllerInterface) {
             throw new RestWSException('Quering not available for this resources', 501);
           }
           $return['string'] = $format->$method($resource, $payload);
-        }
-        else {
+        } else {
            $return['string'] = $format->$method($resource, $id, $payload);
         }
         $return ['header'] = array('Content-Type', $format->mimeType());
@@ -424,14 +434,13 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $pa
       catch (RestWSException $e) {
         $return['errors'] = check_plain($e->getHTTPError()) . ': ' . check_plain($e->getMessage());
         $return['header'] = array('Status', $e->getHTTPError());
-        watchdog('drupal_ddp', $return['errors'], NULL, WATCHDOG_WARNING);
+        watchdog('drupal_ddp', $return['errors'], null, WATCHDOG_WARNING);
       }
     }
 
     return $return;
-  }
-  else {
-    return FALSE;
+  } else {
+    return false;
   }
 }
 
@@ -441,11 +450,11 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $pa
  * Alter the outgoing response.
  *
  * @param mixed $response
- *   The response data being returned by the REST service (not yet serialized).
+ *  The response data being returned by the REST service (not yet serialized).
  * @param string $function
- *   The function being called on the REST service.
+ *  The function being called on the REST service.
  * @param string $format_name
- *   The name of the format serializing the response.
+ *  The name of the format serializing the response.
  *
  * related issue https://drupal.org/node/2024603
  */
@@ -457,8 +466,7 @@ function drupal_ddp_restws_response_alter(&$response, $function, $format_name, $
       foreach ($response['list'] as &$object) {
         drupal_ddp_restws_deep_load($object);
       }
-    }
-    else {
+    } else {
       drupal_ddp_restws_deep_load($response);
     }
   }
@@ -472,10 +480,10 @@ function drupal_ddp_restws_response_alter(&$response, $function, $format_name, $
  * those fields rather than a resource callback.
  *
  * @param $response
- *   response about to be sent back for the RestWS query
+ *  response about to be sent back for the RestWS query
  * @return NULL
- *   this will load additional items into the response, filtering their
- *   fields based on account access to the deep loaded items.
+ *  this will load additional items into the response, filtering their
+ *  fields based on account access to the deep loaded items.
  */
 function drupal_ddp_restws_deep_load(&$response) {
   // build list of allowed entity types to deep pull down
@@ -508,9 +516,7 @@ function drupal_ddp_restws_deep_load(&$response) {
           }
         }
       }
-    }
-    // Has a file reference
-    elseif (is_array($val) && isset($val[0]['file'])) {
+    } elseif (is_array($val) && isset($val[0]['file'])) {
       // Loop through items loading them in.
       foreach ($val as &$item) {
         if (in_array($item['file']['resource'], $allowed)) {
@@ -539,8 +545,7 @@ function drupal_ddp_restws_deep_load(&$response) {
           }
         }
       }
-    }
-    elseif (is_array($val) && isset($val['id'])) {
+    } elseif (is_array($val) && isset($val['id'])) {
       if (in_array($val['resource'], $allowed)) {
         // load the entity
         $entity = entity_load_single($val['resource'], $val['id']);
@@ -585,7 +590,7 @@ function drupal_ddp_get_all_nids_of_type($content_type) {
 function drupal_ddp_sync_existing_nodes($form, &$form_state) {
   // If value is array, then no value was chosen.
   $content_type_to_sync = $form_state['values']['sync_content_type'];
-  if(empty($content_type_to_sync)) {
+  if (empty($content_type_to_sync)) {
     drupal_set_message(t('No content types were chosen.'), 'error');
     return;
   }
@@ -604,7 +609,7 @@ function drupal_ddp_sync_existing_nodes($form, &$form_state) {
 function drupal_ddp_sync_existing_taxonomies($form, &$form_state) {
   // If value is array, then no value was chosen.
   $vocab_name = $form_state['values']['sync_vocab'];
-  if(empty($vocab_name)) {
+  if (empty($vocab_name)) {
     drupal_set_message(t('No content types were chosen.'), 'error');
     return;
   }
@@ -624,7 +629,15 @@ function drupal_ddp_sync_existing_taxonomies($form, &$form_state) {
 function drupal_ddp_batch_sync_nodes($content_type) {
   $nids = drupal_ddp_get_all_nids_of_type($content_type);
   $num_operations = count($nids);
-  drupal_set_message(t('Syncing @num nodes of "@content_type"', array('@num' => $num_operations, '@content_type' => $content_type)));
+  drupal_set_message(
+    t(
+      'Syncing @num nodes of "@content_type"',
+      array(
+        '@num' => $num_operations,
+        '@content_type' => $content_type
+        )
+      )
+    );
 
   $operations = array();
   // Each operation in the operations array means at least one new HTTP request,
@@ -656,7 +669,12 @@ function drupal_ddp_batch_sync_nodes($content_type) {
 function drupal_ddp_batch_sync_taxonomy($vocab) {
   $terms = taxonomy_get_tree($vocab->vid);
   $num_operations = count($terms);
-  drupal_set_message(t('Syncing @num terms in "@vocab"', array('@num' => $num_operations, '@vocab' => $vocab->name)));
+  drupal_set_message(t('Syncing @num terms in "@vocab"', 
+                        array(
+                          '@num' => $num_operations,
+                          '@vocab' => $vocab->name)
+                        )
+                    );
 
   $operations = array();
   // Each operation in the operations array means at least one new HTTP request,
@@ -686,7 +704,7 @@ function drupal_ddp_batch_sync_taxonomy($vocab) {
  * Load a node and save it to invoke hook_entity_update().
  */
 function _drupal_ddp_batch_node_operation($nid, $operation_details, &$context) {
-  $node = node_load($nid, NULL, TRUE);
+  $node = node_load($nid, null, true);
 
   // Store some results for post-processing in the 'finished' callback.
   // The contents of 'results' will be available as $results in the
@@ -717,8 +735,6 @@ function _drupal_ddp_batch_taxonomy_operation($term, $operation_details, &$conte
   $context['message'] = t('Syncing term "@title"', array('@title' => $term->name)) . ' ' . $operation_details;
 
   // Save Term.
-  $term->name = $term->name . '____changed';
-  dpm($term);
   taxonomy_term_save($term);
 
   _drupal_ddp_update_http_requests();
@@ -733,8 +749,7 @@ function drupal_ddp_batch_finished($success, $results, $operations) {
     // Here we could do something meaningful with the results.
     // We just display the number of nodes we processed...
     drupal_set_message(t('@count items synced.', array('@count' => count($results))));
-  }
-  else {
+  } else {
     // An error occurred.
     // $operations contains the operations that remained unprocessed.
     $error_operation = reset($operations);
