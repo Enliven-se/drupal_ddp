@@ -54,11 +54,11 @@ function _drupal_ddp_users_sync_password($form_id, &$form_state) {
     $account->uid = $form_state['values']['uid'];
     $account->mail = $form_state['values']['mail'];
     $account->name = $form_state['values']['name'];
-    $account->sha_pass = hash('sha256', $form_state['values']['pass']);    
+    $account->sha_pass = hash('sha256', $form_state['values']['pass']);
     $account->ddp_type = 'update_user_password';
 
     drupal_ddp_send_content($account);
-  }  
+  }
 }
 
 /**
@@ -74,8 +74,8 @@ function drupal_ddp_users_form_alter(&$form, &$form_state, $form_id) {
     );
 
     $form['drupal_ddp_settings']['sync']['users']['submit'] = array(
-      '#type' => 'submit', 
-      '#value' => t('Sync All Users'), 
+      '#type' => 'submit',
+      '#value' => t('Sync All Users'),
       '#submit' => array('drupal_ddp_sync_existing_users'),
     );
   }
@@ -95,7 +95,7 @@ function drupal_ddp_sync_existing_users($form, &$form_state) {
 
   // Set array keys to numerical sequence
   $users = array_values($users);
-  
+
   // Reset counter for debug information.
   $_SESSION['http_request_count'] = 0;
 
