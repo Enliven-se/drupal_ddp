@@ -54,7 +54,7 @@ function _drupal_ddp_form() {
     '#default_value' => variable_get('drupal_ddp_settings_ddp_server_url',
                                      'http://localhost:8080'
                                      ),
-    '#description' => t('Enter the full URL to access 
+    '#description' => t('Enter the full URL to access
                          your Drupal DDP node sever (ddp.js)'
                          ),
   );
@@ -64,7 +64,7 @@ function _drupal_ddp_form() {
     '#default_value' => variable_get('drupal_ddp_settings_meteor_host_url',
                                      'http://localhost:3000'
                                      ),
-    '#description' => t('Enter the full URL to access your 
+    '#description' => t('Enter the full URL to access your
                          Meteor application, including port number.'
                          ),
   );
@@ -95,8 +95,8 @@ function _drupal_ddp_form() {
   $form['drupal_ddp_settings']['sync'] = array(
     '#type' => 'fieldset',
     '#title' => t('Sync existing content with Meteor'),
-    '#description' => t('Push existing data over to Meteor. 
-                         Make sure that the DDP server & 
+    '#description' => t('Push existing data over to Meteor.
+                         Make sure that the DDP server &
                          your Meteor app are running.'),
     '#collapsible' => true,
     '#collapsed' => true,
@@ -115,8 +115,8 @@ function _drupal_ddp_form() {
     '#options' => $sync_nodes,
   );
   $form['drupal_ddp_settings']['sync']['nodes']['submit'] = array(
-    '#type' => 'submit', 
-    '#value' => t('Sync Nodes'), 
+    '#type' => 'submit',
+    '#value' => t('Sync Nodes'),
     '#submit' => array('drupal_ddp_sync_existing_nodes'),
   );
 
@@ -139,8 +139,8 @@ function _drupal_ddp_form() {
     '#options' => $sync_taxonomies,
   );
   $form['drupal_ddp_settings']['sync']['taxonomies']['submit'] = array(
-    '#type' => 'submit', 
-    '#value' => t('Sync Taxonomy'), 
+    '#type' => 'submit',
+    '#value' => t('Sync Taxonomy'),
     '#submit' => array('drupal_ddp_sync_existing_taxonomies'),
   );
 
@@ -297,10 +297,10 @@ function drupal_ddp_use_with_ddp($content_type) {
  */
 function drupal_ddp_send_content($content) {
   $ddp_client_url = variable_get(
-    'drupal_ddp_settings_ddp_server_url', 
+    'drupal_ddp_settings_ddp_server_url',
     'http://localhost:8080'
   );
-  
+
   if ($content->ddp_type == 'node') {
     // Load the node.
     // This gets around an issue of cached data
@@ -415,7 +415,7 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = null, $pa
     // Since there is no access callback for query we need to use view.
     $access_op = $op == 'query' ? 'view' : $op;
     $return = array();
-      
+
     try {
       $method = $op . 'Resource';
       if ($op == 'create') {
@@ -522,7 +522,7 @@ function drupal_ddp_restws_deep_load(&$response) {
           // Load the entity
           $entity = entity_load_single($item['file']['resource'], $item['file']['id']);
           $file_url = file_create_url($entity->uri);
-          
+
           // Ensure they can view this specific item.
           if (entity_access('view', $item['file']['resource'], $entity)) {
             // Create a meta wrapper to act on for entity.
@@ -668,7 +668,7 @@ function drupal_ddp_batch_sync_nodes($content_type) {
 function drupal_ddp_batch_sync_taxonomy($vocab) {
   $terms = taxonomy_get_tree($vocab->vid);
   $num_operations = count($terms);
-  drupal_set_message(t('Syncing @num terms in "@vocab"', 
+  drupal_set_message(t('Syncing @num terms in "@vocab"',
                         array(
                           '@num' => $num_operations,
                           '@vocab' => $vocab->name)
@@ -772,7 +772,7 @@ function _drupal_ddp_update_http_requests() {
 
 /**
  * Utility function to count the HTTP requests in a session variable.
- * 
+ *
  * @return int
  *   Number of requests.
  */
