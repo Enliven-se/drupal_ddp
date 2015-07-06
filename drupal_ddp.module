@@ -52,21 +52,16 @@ function _drupal_ddp_form() {
     '#type' => 'textfield',
     '#title' => t('Drupal DDP node server URL'),
     '#default_value' => variable_get('drupal_ddp_settings_ddp_server_url',
-                                     'http://localhost:8080'
-                                     ),
-    '#description' => t('Enter the full URL to access
-                         your Drupal DDP node sever (ddp.js)'
-                         ),
+                                     'http://localhost:8080'),
+    '#description' => t('Enter the full URL to your node sever (ddp.js).
+      Make sure to enter the port that the node server is listening on.'),
   );
-  $form['drupal_ddp_settings']['drupal_ddp_settings_meteor_host_url'] = array(
+  $form['drupal_ddp_settings']['drupal_ddp_security_token'] = array(
     '#type' => 'textfield',
-    '#title' => t('Meteor app URL'),
-    '#default_value' => variable_get('drupal_ddp_settings_meteor_host_url',
-                                     'http://localhost:3000'
-                                     ),
-    '#description' => t('Enter the full URL to access your
-                         Meteor application, including port number.'
-                         ),
+    '#title' => t('Simple Security Password'),
+    '#default_value' => variable_get('drupal_ddp_security_token'),
+    '#description' => t('Enter a simple security password.
+      Enter this same password in your Meteor settings.json file.'),
   );
 
   $content_types = node_type_get_types();
@@ -333,8 +328,15 @@ function drupal_ddp_send_content($content) {
     $content = $node;
   }
 
+  // If a security phrase is set, add it to json object.
+  $security_phrase = variable_get('drupal_ddp_security_token');
+  $send_security = '';
+  if (!empty($security_phrase)) {
+    $send_security = '"simple_security": "'. $security_phrase . '", ';
+  }
+
   // Create json document with data.
-  $data = '{"content":' . json_encode($content) . '}';
+  $data = '{'. $send_security . '"content":' . json_encode($content) . '}';
 
   $options = array(
     'method' => 'POST',
