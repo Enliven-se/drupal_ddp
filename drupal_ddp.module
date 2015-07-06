@@ -58,10 +58,10 @@ function _drupal_ddp_form() {
   );
   $form['drupal_ddp_settings']['drupal_ddp_security_token'] = array(
     '#type' => 'textfield',
-    '#title' => t('Simple Security Password'),
+    '#title' => t('Simple Security Token'),
     '#default_value' => variable_get('drupal_ddp_security_token'),
-    '#description' => t('Enter a simple security password.
-      Enter this same password in your Meteor settings.json file.'),
+    '#description' => t('Enter a simple security token.
+      Enter this same token in your Meteor settings.json file.'),
   );
 
   $content_types = node_type_get_types();
