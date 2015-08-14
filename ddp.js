@@ -15,8 +15,10 @@ var ddpclient = new DDPClient({
   port: 3000,
   // autoReconnect: true,
   // autoReconnectTimer: 500,
+  // ddpVersion: '1',
   // ssl: false,
-  maintainCollections: false
+  maintainCollections: false,
+  useSockJs: true,
 });
 
 app.use(bodyParser.json());
