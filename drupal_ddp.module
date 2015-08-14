@@ -15,7 +15,7 @@ function drupal_ddp_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments'  => array('_drupal_ddp_form'),
     'access arguments' => array('access drupal ddp'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_NORMAL_ITEM,
   );
   return $items;
 }
