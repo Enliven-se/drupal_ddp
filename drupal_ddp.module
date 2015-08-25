@@ -689,7 +689,12 @@ function _drupal_ddp_batch_node_operation($nid, $operation_details, &$context) {
   $context['results'][] = $node->nid . ' : ' . check_plain($node->title);
 
   // Message displayed under the progressbar.
-  $context['message'] = t('Syncing node "@title"', array('@title' => $node->title)) . ' ' . $operation_details;
+  $context['message'] = t('Syncing node "@title" @operation_detail',
+    array(
+      '@title' => $node->title,
+      '@operation_detail' => $operation_details,
+    )
+  );
 
   // Save node.
   node_save($node);
@@ -709,7 +714,12 @@ function _drupal_ddp_batch_taxonomy_operation($term, $operation_details, &$conte
   $context['results'][] = $term->tid . ' : ' . check_plain($term->name);
 
   // Message displayed under the progressbar.
-  $context['message'] = t('Syncing term "@title"', array('@title' => $term->name)) . ' ' . $operation_details;
+  $context['message'] = t('Syncing term "@title" @operation_detail',
+    array(
+      '@title' => $term->name,
+      '@operation_detail' => $operation_details,
+    )
+  );
 
   // Save Term.
   taxonomy_term_save($term);
