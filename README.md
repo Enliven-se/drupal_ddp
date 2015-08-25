@@ -18,7 +18,8 @@ Development of this module is sponsored by [hb5](http://hb5.co)
 *not necessarily required*
 
 ###Installation###
-* Download and install module. See [Instructions for Installing modules](https://www.drupal.org/documentation/install/modules-themes/modules-7)
+* Download and install module. See
+[Instructions for Installing modules](https://www.drupal.org/documentation/install/modules-themes/modules-7)
 * Navigate to module folder and run `node install`.
  * This will install all node dependencies
 * Run `node ddp.js`
@@ -39,4 +40,5 @@ Development of this module is sponsored by [hb5](http://hb5.co)
     ...
     ...
   });
-* Optionally set a Simple Security Token that enables simple authentication of ddp calls to your Meteor application.
+* Optionally set a Simple Security Token that enables simple authentication of
+ddp calls to your Meteor application.
