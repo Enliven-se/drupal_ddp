@@ -400,8 +400,6 @@ function drupal_ddp_handle_request($op, $format, $resource_name, $id = NULL, $pa
     );
     drupal_alter('restws_request', $request);
 
-    // Since there is no access callback for query we need to use view.
-    $access_op = $op == 'query' ? 'view' : $op;
     $return = array();
 
     try {
@@ -470,7 +468,7 @@ function drupal_ddp_restws_deep_load(array &$response) {
   $allowed = array('taxonomy_term', 'file');
 
   // Allow for deep loading of resources.
-  foreach ($response as $key => &$val) {
+  foreach ($response as &$val) {
     // Check for a single resource verses many.
     if (is_array($val) && isset($val[0]['id'])) {
       // Loop through items loading them in.
