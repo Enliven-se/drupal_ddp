@@ -20,7 +20,7 @@ function drupal_ddp_uninstall() {
   foreach ($content_types as $key => $type) {
     if (variable_get('drupal_ddp_enabled_' . $key, 0) == 1) {
       variable_del('drupal_ddp_enabled_' . $key);
-      if (variable_get('additional_settings__active_tab_'  . $key, 0) == 'edit-drupal-ddp') {
+      if (variable_get('additional_settings__active_tab_' . $key, 0) == 'edit-drupal-ddp') {
         variable_del('additional_settings__active_tab_' . $key);
       }
     }
