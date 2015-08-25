@@ -21,7 +21,7 @@ function drupal_ddp_users_entity_insert($entity, $type) {
         $account->name = $entity->name;
         $account->sha_pass = hash('sha256', $_REQUEST['pass']['pass1']);
 
-        $sync_password = _drupal_ddp_users_sync_password($account);
+        _drupal_ddp_users_sync_password($account);
       }
       break;
   }
@@ -44,7 +44,7 @@ function drupal_ddp_users_entity_update($entity, $type) {
         $account->name = $entity->name;
         $account->sha_pass = hash('sha256', $_REQUEST['pass']['pass1']);
 
-        $sync_password = _drupal_ddp_users_sync_password($account);
+        _drupal_ddp_users_sync_password($account);
       }
       break;
   }
