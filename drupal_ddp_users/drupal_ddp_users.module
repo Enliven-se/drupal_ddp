@@ -173,11 +173,15 @@ function _drupal_ddp_batch_users_operation($user, $operation_details, &$context)
   $context['results'][] = $user->uid . ' : ' . check_plain($user->name);
 
   // Message displayed under the progressbar.
-  $context['message'] = t('Syncing user "@name"', array('@name' => $user->name)) . ' ' . $operation_details;
+  $context['message'] = t('Syncing user "@name" @operation_detail',
+      array(
+        '@name' => $user->name,
+        '@operation_detail' => $operation_details,
+      )
+    );
 
   // Save User object.
   user_save($user);
 
   _drupal_ddp_update_http_requests();
 }
-
