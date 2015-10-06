@@ -331,7 +331,31 @@ function drupal_ddp_send_content($content) {
     'data' => $data,
     'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
   );
-  drupal_http_request($ddp_client_url, $options);
+
+  drupal_ddp_sync_queue_content($content);
+
+  $response = drupal_http_request($ddp_client_url, $options);
+
+  if ($response->code == '-1') {
+    watchdog('drupal_ddp', 'Request Timed Out: ' . serialize($response), array(), WATCHDOG_ERROR);
+    drupal_set_message(t('DDP: Request to Meteor timed out'), 'error', FALSE);
+  }
+  elseif ($response->code == '-61') {
+    watchdog('drupal_ddp', 'Connection Refused: ' . serialize($response), array(), WATCHDOG_ERROR);
+    drupal_set_message(t('DDP: Could not connect to Node Server'), 'error', FALSE);
+  }
+  elseif ($response->code == '200') {
+    $json_response = drupal_json_decode($response->data);
+
+    // Meteor responded with an error.
+    if (isset($json_response['error'])) {
+      watchdog('drupal_ddp', 'Meteor Error: ' . serialize($json_response), array(), WATCHDOG_ERROR);
+      drupal_set_message(t('DDP: Meteor Error - @error', array('@error' => $json_response['message'])), 'error', FALSE);
+    }
+    else {
+      drupal_ddp_sync_queue_content($content, $json_response, 'success');
+    }
+  }
 }
 
 /**
@@ -352,16 +376,10 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
       '#title' => t('Drupal DDP'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      // The #group value must match the name of the vertical tabs element.
-      // In most cases, this is 'additional_settings'.
       '#group' => 'additional_settings',
       '#attributes' => array(
         'class' => array('drupal-ddp-node-type-settings-form'),
       ),
-      // Vertical tabs provide its most usable appearance when they are used to
-      // include a summary of the information contained in the fieldset. To do
-      // this, we attach additional JavaScript to handle changing the summary
-      // when form settings are changed.
       '#attached' => array(
         'js' => array(
           'vertical-tabs' => drupal_get_path('module', 'drupal_ddp') . '/drupal_ddp.js',
@@ -369,11 +387,6 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
       ),
     );
 
-    // The form elements below provide a demonstration of how a fieldset
-    // summary can be displayed in a collapsed tab.
-    //
-    // This checkbox is used to show or hide the custom settings form using
-    // javascript (altering states of a container defined later).
     $form['drupal_ddp']['drupal_ddp_enabled'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use this content type with Drupal DDP'),
@@ -382,6 +395,72 @@ function drupal_ddp_form_node_type_form_alter(&$form, $form_state) {
   }
 }
 
+/**
+ * Set queue status in queue table.
+ *
+ * Marks the sync process as being started or successful.
+ *
+ * @param object $content
+ *   Node/User/Taxonomy object.
+ * @param array $response
+ *   Array response returned from Meteor.
+ * @param string $state
+ *   Indicate state of item to be queued. Either 'init' or 'success'.
+ */
+function drupal_ddp_sync_queue_content($content, $response = array(), $state = 'init') {
+  $record = array();
+  $table = $key = '';
+  // Default to inserting new record.
+  $insert = 0;
+
+  switch ($content->ddp_type) {
+    case 'node':
+      $table = 'drupal_ddp_sync_node';
+      $record['nid'] = $content->nid;
+      $key = 'nid';
+      $upsert = db_query('SELECT nid FROM {drupal_ddp_sync_node} WHERE nid = :nid', array(':nid' => $content->nid));
+      $insert = $upsert->rowCount();
+      break;
+
+    case 'user':
+      $table = 'drupal_ddp_sync_user';
+      $record['uid'] = $content->uid;
+      $key = 'uid';
+      $upsert = db_query('SELECT uid FROM {drupal_ddp_sync_user} WHERE uid = :uid', array(':uid' => $content->uid));
+      $insert = $upsert->rowCount();
+      break;
+
+    case 'taxonomy':
+      $table = 'drupal_ddp_sync_taxonomy';
+      $record['tid'] = $content->tid;
+      $key = 'tid';
+      $upsert = db_query('SELECT tid FROM {drupal_ddp_sync_taxonomy} WHERE tid = :tid', array(':tid' => $content->tid));
+      $insert = $upsert->rowCount();
+      break;
+  }
+
+  // If inserting a new record.
+  if ($insert == 0) {
+    $record['last_successful_sync'] = NULL;
+    $record['last_attempted_sync'] = time();
+    // 0 for new record insert, 1 for record update.
+    $record['sync_successful'] = 0;
+  }
+  // If updating a record after successful sync.
+  elseif ($insert != 0 && $state == 'success' && !empty($response)) {
+    $record['last_successful_sync'] = $response['timestamp'];
+    // 0 for new record insert, 1 for record update.
+    $record['sync_successful'] = 1;
+  }
+
+  // Inserting or Updating $record (data) into the database.
+  if ($insert != 0) {
+    drupal_write_record($table, $record, $key);
+  }
+  else {
+    drupal_write_record($table, $record);
+  }
+}
 
 /**
  * Handles a request and returns it as a variable instead of printing it.
