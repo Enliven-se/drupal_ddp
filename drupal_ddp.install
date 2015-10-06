@@ -26,3 +26,193 @@ function drupal_ddp_uninstall() {
     }
   }
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add tables required for tracking sync states.
+ */
+function drupal_ddp_update_7001() {
+  $schema['drupal_ddp_sync_node'] = array(
+    'description' => 'Drupal DDP node sync table.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a node attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the node successfully synced. 0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  $schema['drupal_ddp_sync_user'] = array(
+    'description' => 'Drupal DDP user sync table.',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The primary identifier for a user.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a user attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the user successfully synced.  0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
+  $schema['drupal_ddp_sync_taxonomy'] = array(
+    'description' => 'Drupal DDP taxonomy sync table.',
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The primary identifier for a taxonomy term.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a taxonomy term attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the taxonomy term successfully synced. 0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('tid'),
+  );
+
+  db_create_table('drupal_ddp_sync_node', $schema['drupal_ddp_sync_node']);
+  db_create_table('drupal_ddp_sync_user', $schema['drupal_ddp_sync_user']);
+  db_create_table('drupal_ddp_sync_taxonomy', $schema['drupal_ddp_sync_taxonomy']);
+}
+
+/**
+ * Implements hook_schema().
+ */
+function drupal_ddp_schema() {
+  $schema['drupal_ddp_sync_node'] = array(
+    'description' => 'Drupal DDP node sync table.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a node attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the node successfully synced. 0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  $schema['drupal_ddp_sync_user'] = array(
+    'description' => 'Drupal DDP user sync table.',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The primary identifier for a user.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a user attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the user successfully synced.  0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
+  $schema['drupal_ddp_sync_taxonomy'] = array(
+    'description' => 'Drupal DDP taxonomy sync table.',
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The primary identifier for a taxonomy term.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'last_attempted_sync' => array(
+        'description' => 'The last time (UNIX Timestamp) that a taxonomy term attempted to sync.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sync_successful' => array(
+        'description' => 'Whether or not the taxonomy term successfully synced. 0 = false, 1 = true.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'last_successful_sync' => array(
+        'description' => 'Time (UNIX Timestamp) of last successful sync.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('tid'),
+  );
+
+  return $schema;
+}
