@@ -35,11 +35,11 @@ app.post('/', function(req, res, next) {
   ddpclient.call('DrupalSaveNode', [req.body], function(err, response) {
     if (!err) {
       res.send(response);
-    } else {
+    }
+    else {
       res.send(err);
     }
   });
-
 
 });
 
