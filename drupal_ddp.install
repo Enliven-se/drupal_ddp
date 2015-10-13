@@ -28,8 +28,6 @@ function drupal_ddp_uninstall() {
 }
 
 /**
- * Implements hook_update_N().
- *
  * Add tables required for tracking sync states.
  */
 function drupal_ddp_update_7001() {
@@ -39,6 +37,7 @@ function drupal_ddp_update_7001() {
       'nid' => array(
         'description' => 'The primary identifier for a node.',
         'type' => 'serial',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'last_attempted_sync' => array(
