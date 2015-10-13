@@ -728,7 +728,13 @@ function drupal_ddp_batch_sync_nodes($content_type) {
 function drupal_ddp_batch_sync_taxonomy($vocab) {
   $terms = taxonomy_get_tree($vocab->vid);
   $num_operations = count($terms);
-  drupal_set_message(t('Syncing @num terms in "@vocab"', array('@num' => $num_operations, '@vocab' => $vocab->name)));
+  drupal_set_message(t(
+    'Syncing @num terms in "@vocab"', 
+    array(
+      '@num' => $num_operations,
+      '@vocab' => $vocab->name)
+    )
+  );
 
   $operations = array();
   // Each operation in the operations array means at least one new HTTP request,
