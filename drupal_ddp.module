@@ -445,22 +445,25 @@ function drupal_ddp_sync_queue_content($content, $response = array(), $state = '
   if ($insert == 0) {
     $record['last_successful_sync'] = NULL;
     $record['last_attempted_sync'] = time();
-    // 0 for new record insert, 1 for record update.
     $record['sync_successful'] = 0;
-  }
-  // If updating a record after successful sync.
-  elseif ($insert != 0 && $state == 'success' && !empty($response)) {
-    $record['last_successful_sync'] = $response['timestamp'];
-    // 0 for new record insert, 1 for record update.
-    $record['sync_successful'] = 1;
-  }
 
-  // Inserting or Updating $record (data) into the database.
-  if ($insert != 0) {
+    drupal_write_record($table, $record);
+  }
+  // Sync initialization of an already existing record.
+  elseif ($insert != 0 && $state == 'init') {
+    $record['last_attempted_sync'] = time();
+    $record['sync_successful'] = 0;
+
     drupal_write_record($table, $record, $key);
   }
-  else {
-    drupal_write_record($table, $record);
+  // If updating a record after successful sync. Remove record.
+  elseif ($insert != 0 && $state == 'success' && !empty($response)) {
+    $record['last_successful_sync'] = $response['timestamp'];
+    $record['sync_successful'] = 1;
+
+    db_delete($table)
+      ->condition($key, $record[$key])
+      ->execute();
   }
 }
 
@@ -731,10 +734,11 @@ function drupal_ddp_batch_sync_taxonomy($vocab) {
   $terms = taxonomy_get_tree($vocab->vid);
   $num_operations = count($terms);
   drupal_set_message(t(
-    'Syncing @num terms in "@vocab"', 
+    'Syncing @num terms in "@vocab"',
     array(
       '@num' => $num_operations,
-      '@vocab' => $vocab->name)
+      '@vocab' => $vocab->name,
+    )
     )
   );
 
