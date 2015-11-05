@@ -93,6 +93,11 @@ function _drupal_ddp_unsynced_content_form(array $form, array &$form_state, $key
     '#options' => $rows,
     '#empty' => t('No records found'),
   );
+
+  $form['pager'] = array(
+    '#theme' => 'pager'
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Re-sync content'),
