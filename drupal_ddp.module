@@ -366,7 +366,6 @@ function drupal_ddp_send_content($content) {
     'method' => 'POST',
     'data' => $data,
     'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
-    'timeout' => 5,
   );
 
   // Add content to drupal queue to keep track syncs that fail.
