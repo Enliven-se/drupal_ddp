@@ -74,6 +74,15 @@ function drupal_ddp_permission() {
 }
 
 /**
+ * Implements hook_cron().
+ *
+ * Update Dashboard with connection settings status.
+ */
+function drupal_ddp_cron() {
+  _drupal_ddp_meteor_update_status();
+}
+
+/**
  * Settings form for Drupal DDP module.
  *
  * @return array
@@ -87,6 +96,31 @@ function _drupal_ddp_form() {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
+
+  // Attach css for simple styling of dashboard.
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'drupal_ddp') . '/css/dashboard.css',
+  );
+
+  $form['drupal_ddp_settings']['dashboard'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Connection Status')
+  );
+
+  $form['drupal_ddp_settings']['dashboard']['status'] = array(
+    '#markup' => _drupal_ddp_check_meteor_status(),
+  );
+
+  $form['drupal_ddp_settings']['dashboard']['check_node'] = array(
+    '#type' => 'button',
+    '#value' => t('Check Meteor Status'),
+    '#ajax' => array(
+      'callback' => '_drupal_ddp_check_meteor_status',
+      'wrapper' => 'dashboard-status-message',
+      'method' => 'replace',
+    ),
+  );
+
   $form['drupal_ddp_settings']['drupal_ddp_settings_ddp_server_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Drupal DDP node server URL'),
@@ -181,6 +215,95 @@ function _drupal_ddp_form() {
   $form['#submit'][] = '_drupal_ddp_settings_submit';
 
   return system_settings_form($form);
+}
+
+/**
+ * Dashboard status content.
+ *
+ * Update dashboard with current status of Meteor & node server.
+ */
+function _drupal_ddp_check_meteor_status() {
+  _drupal_ddp_meteor_update_status();
+
+  $node_status = (variable_get('drupal_ddp_node_server_status', 0) == 0 ? 'inactive' : 'active');
+  $meteor_status = (variable_get('drupal_ddp_meteor_status', 0) == 0 ? 'inactive' : 'active');
+
+  $output = '<div id="dashboard-status-message">';
+  $output .= '<div class="ddp-status node-server-status ' . $node_status . '">';
+  $output .= '<strong>Node Server:</strong> ' . $node_status;
+  $output .= '</div>';
+
+  $output .= '<div class="ddp-status meteor-server-status ' . $meteor_status . '">';
+  $output .= '<strong>Meteor:</strong> ' . $meteor_status;
+  $output .= '</div>';
+
+  $output .= '<div class="last-updated">';
+  $output .= '<strong>Last Updated:</strong> ' . variable_get('drupal_ddp_dashboard_last_updated', '');
+  $output .= '</div>';
+
+  $output .= '</div>';
+
+  return $output;
+}
+
+/**
+ * Check status of Meteor & Node server and update variables.
+ */
+function _drupal_ddp_meteor_update_status() {
+  $ddp_client_url = variable_get(
+    'drupal_ddp_settings_ddp_server_url',
+    'http://localhost:8080'
+  ) . '/status';
+
+  $options = array(
+    'method' => 'POST',
+    'data' => '',
+    'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
+    'timeout' => 5,
+  );
+
+  $response = drupal_http_request($ddp_client_url, $options);
+
+  if ($response->code) {
+    $response_code = $response->code;
+    switch ($response_code) {
+      case 200:
+        variable_set('drupal_ddp_node_server_status', 1);
+        variable_set('drupal_ddp_meteor_status', 1);
+        break;
+
+      case -1:
+        variable_set('drupal_ddp_node_server_status', 1);
+        variable_set('drupal_ddp_meteor_status', 0);
+
+        watchdog('drupal_ddp',
+          'Connection to Meteor Down: ' . serialize($response),
+          array(),
+          WATCHDOG_ERROR);
+
+        break;
+
+      default:
+        variable_set('drupal_ddp_node_server_status', 0);
+        variable_set('drupal_ddp_meteor_status', 0);
+
+        watchdog('drupal_ddp',
+          'Connection to Meteor Down: ' . serialize($response),
+          array(),
+          WATCHDOG_ERROR);
+
+        drupal_set_message(t('Cannot reach Meteor when Node Server is down.'),
+          'status',
+          FALSE);
+        break;
+    }
+
+  }
+
+  // Update last time checked.
+  variable_set('drupal_ddp_dashboard_last_updated',
+    format_date(time(), 'long')
+  );
 }
 
 /**
