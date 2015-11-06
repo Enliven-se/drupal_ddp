@@ -40,6 +40,20 @@ app.post('/', function(req, res, next) {
       res.send(err);
     }
   });
+});
+
+app.post('/status', function(req, res, next) {
+  console.log(req.headers);
+  console.log(req.body);
+
+  ddpclient.call('DrupalGetMeteorStatus', [req.body], function(err, response) {
+    if (!err) {
+      res.send(response);
+    }
+    else {
+      res.send(err);
+    }
+  });
 
 });
 
