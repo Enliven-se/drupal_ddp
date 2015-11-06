@@ -15,7 +15,6 @@ function drupal_ddp_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments'  => array('_drupal_ddp_form'),
     'access arguments' => array('access drupal ddp'),
-    'type' => MENU_LOCAL_TASK,
   );
   $items['admin/config/development/drupal-ddp/settings'] = array(
     'title' => 'Drupal DDP Settings',
@@ -25,7 +24,7 @@ function drupal_ddp_menu() {
   );
   $items['admin/config/development/drupal-ddp/queue-node'] = array(
     'title' => 'DDP Queue [Nodes]',
-    'description' => 'List of posts that did not sync to Meteor.',
+    'description' => 'List of nodes that did not sync to Meteor.',
     'page callback' => 'drupal_get_form',
     'page arguments'  => array('_drupal_ddp_unsynced_content_form', 'nid', 'node'),
     'file' => 'drupal_ddp_sync_queue.inc',
