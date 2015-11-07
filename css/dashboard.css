@@ -1,0 +1,31 @@
+#dashboard-status-message {
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+#dashboard-status-message .ddp-status {
+  width: 200px;
+  /*min-width: 30%;*/
+  padding: 30px 15px 30px 55px;
+  float: left;
+  border: 1px solid #ccc;
+  margin-right: 30px;
+  border-radius: 5px;
+}
+
+#dashboard-status-message .ddp-status.active {
+  background: url(images/active.png) no-repeat 10px 20px #d1f29d;
+  border: 1px solid #A4CF5E;
+  color: #3b5f01;
+}
+#dashboard-status-message .ddp-status.inactive {
+  background: url(images/inactive.png) no-repeat 10px 20px #fdbdba;
+  border: 1px solid #ff6861;
+  color: #6a0500;
+}
+
+#dashboard-status-message .last-updated {
+  padding-top: 20px;
+  clear: left;
+  font-style: italic;
+}
