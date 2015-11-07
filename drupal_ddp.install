@@ -12,6 +12,9 @@ function drupal_ddp_uninstall() {
   variable_del('drupal_ddp_settings_enabled_types');
   variable_del('drupal_ddp_settings_meteor_host_url');
   variable_del('drupal_ddp_settings_meteor_socket');
+  variable_del('drupal_ddp_node_server_status');
+  variable_del('drupal_ddp_meteor_status');
+  variable_del('drupal_ddp_restws_status');
 
   // Get all available content types.
   $content_types = node_type_get_types();
