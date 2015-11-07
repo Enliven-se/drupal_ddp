@@ -54,7 +54,22 @@ app.post('/status', function(req, res, next) {
       res.send(err);
     }
   });
+});
 
+app.post('/restws', function(req, res, next) {
+  console.log(req.headers);
+  console.log(req.body);
+
+  // Test Meteor Method for updating drupal content, thus verifying
+  // whether restws is configured correctly or not.
+  ddpclient.call('getDrupalSessionToken', [req.body], function(err, response) {
+    if (!err) {
+      res.send(response);
+    }
+    else {
+      res.send(err);
+    }
+  });
 });
 
 ddpclient.connect(function(error, wasReconnect) {

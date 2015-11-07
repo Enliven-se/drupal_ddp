@@ -227,6 +227,7 @@ function _drupal_ddp_check_meteor_status() {
 
   $node_status = (variable_get('drupal_ddp_node_server_status', 0) == 0 ? 'inactive' : 'active');
   $meteor_status = (variable_get('drupal_ddp_meteor_status', 0) == 0 ? 'inactive' : 'active');
+  $restws_status = (variable_get('drupal_ddp_restws_status', 0) == 0 ? 'inactive' : 'active');
 
   $output = '<div id="dashboard-status-message">';
   $output .= '<div class="ddp-status node-server-status ' . $node_status . '">';
@@ -235,6 +236,10 @@ function _drupal_ddp_check_meteor_status() {
 
   $output .= '<div class="ddp-status meteor-server-status ' . $meteor_status . '">';
   $output .= '<strong>Meteor:</strong> ' . $meteor_status;
+  $output .= '</div>';
+
+  $output .= '<div class="ddp-status restws-status ' . $restws_status . '">';
+  $output .= '<strong>RestWS:</strong> ' . $restws_status;
   $output .= '</div>';
 
   $output .= '<div class="last-updated">';
@@ -253,7 +258,10 @@ function _drupal_ddp_meteor_update_status() {
   $ddp_client_url = variable_get(
     'drupal_ddp_settings_ddp_server_url',
     'http://localhost:8080'
-  ) . '/status';
+  );
+
+  $ddp_client_url_status = $ddp_client_url . '/status';
+  $ddp_client_url_restws_status = $ddp_client_url . '/restws';
 
   $options = array(
     'method' => 'POST',
@@ -262,7 +270,7 @@ function _drupal_ddp_meteor_update_status() {
     'timeout' => 5,
   );
 
-  $response = drupal_http_request($ddp_client_url, $options);
+  $response = drupal_http_request($ddp_client_url_status, $options);
 
   if ($response->code) {
     $response_code = $response->code;
@@ -298,6 +306,21 @@ function _drupal_ddp_meteor_update_status() {
         break;
     }
 
+  }
+
+  // Verify that RESTWS is configured properly.
+  $restws_response = drupal_http_request($ddp_client_url_restws_status, $options);
+  if ($restws_response->code && $restws_response->code == 200) {
+    if (!empty($restws_response->data)) {
+      variable_set('drupal_ddp_restws_status', 1);
+    }
+    // If Meteor is up and no data is returned
+    else {
+      drupal_set_message(t('RestWS may not be configured correctly.'),
+          'status',
+          FALSE);
+      variable_set('drupal_ddp_restws_status', 0);
+    }
   }
 
   // Update last time checked.
