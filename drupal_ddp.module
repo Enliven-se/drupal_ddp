@@ -124,6 +124,33 @@ function _drupal_ddp_form() {
     ),
   );
 
+  $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Report failures to Slack'),
+    '#default_value' => variable_get('ddp_slack_integration')
+  );
+  $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Slack Webhook URL'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="ddp_slack_integration"]' => array('checked' => FALSE),
+      ),
+    ),
+    '#default_value' => variable_get('ddp_slack_integration_url')
+  );
+  $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration_channel'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Slack Channel'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="ddp_slack_integration"]' => array('checked' => FALSE),
+      ),
+    ),
+    '#default_value' => variable_get('ddp_slack_integration_channel'),
+    '#description' => t('Enter the channel to post message to. (e.g. #application-alerts)'),
+  );
+
   $form['drupal_ddp_settings']['drupal_ddp_settings_ddp_server_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Drupal DDP node server URL'),
