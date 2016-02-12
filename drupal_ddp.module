@@ -107,7 +107,7 @@ function _drupal_ddp_form() {
 
   $form['drupal_ddp_settings']['dashboard'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Connection Status')
+    '#title' => t('Connection Status'),
   );
 
   $form['drupal_ddp_settings']['dashboard']['status'] = array(
@@ -127,7 +127,7 @@ function _drupal_ddp_form() {
   $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration'] = array(
     '#type' => 'checkbox',
     '#title' => t('Report failures to Slack'),
-    '#default_value' => variable_get('ddp_slack_integration')
+    '#default_value' => variable_get('ddp_slack_integration'),
   );
   $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration_url'] = array(
     '#type' => 'textfield',
@@ -137,7 +137,7 @@ function _drupal_ddp_form() {
         ':input[name="ddp_slack_integration"]' => array('checked' => FALSE),
       ),
     ),
-    '#default_value' => variable_get('ddp_slack_integration_url')
+    '#default_value' => variable_get('ddp_slack_integration_url'),
   );
   $form['drupal_ddp_settings']['dashboard']['ddp_slack_integration_channel'] = array(
     '#type' => 'textfield',
@@ -307,7 +307,7 @@ function _drupal_ddp_meteor_update_status() {
     switch ($response_code) {
       case 200:
         // Send message to slack if feature is enabled.
-        if(variable_get('ddp_slack_integration')) {
+        if (variable_get('ddp_slack_integration')) {
           $msg = 'Connection to Meteor is back up!';
           drupal_ddp_report_connection_error_to_slack($msg, 1);
         }
@@ -320,7 +320,7 @@ function _drupal_ddp_meteor_update_status() {
         $msg = 'Connection to Meteor Down!';
 
         // Send message to slack if feature is enabled.
-        if(variable_get('ddp_slack_integration')) {
+        if (variable_get('ddp_slack_integration')) {
           drupal_ddp_report_connection_error_to_slack($msg, 0);
         }
 
@@ -338,7 +338,7 @@ function _drupal_ddp_meteor_update_status() {
         $msg = 'Connection to Meteor Down!';
 
         // Send message to slack if feature is enabled.
-        if(variable_get('ddp_slack_integration')) {
+        if (variable_get('ddp_slack_integration')) {
           drupal_ddp_report_connection_error_to_slack($msg, 0);
         }
 
@@ -389,7 +389,7 @@ function _drupal_ddp_meteor_update_status() {
  *   The current state of the form being submitted.
  */
 function drupal_ddp_report_connection_error_to_slack($msg, $status) {
-  if(variable_get('ddp_slack_integration') && !empty(variable_get('ddp_slack_integration_url'))) {
+  if (variable_get('ddp_slack_integration') && !empty(variable_get('ddp_slack_integration_url'))) {
     global $base_url;
     $slack_webhook_url = variable_get('ddp_slack_integration_url');
     $send_on_success = 'NO';
@@ -417,7 +417,7 @@ function drupal_ddp_report_connection_error_to_slack($msg, $status) {
         'text' => $slack_message,
         'username' => 'Drupal DDP',
         'icon_url' => $icon_url,
-        );
+      );
 
       if (!empty(variable_get('ddp_slack_integration_channel'))) {
         $data['channel'] = variable_get('ddp_slack_integration_channel');
@@ -429,7 +429,7 @@ function drupal_ddp_report_connection_error_to_slack($msg, $status) {
         'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
       );
 
-      // Post request to slack webhook url
+      // Post request to slack webhook url.
       drupal_http_request($slack_webhook_url, $options);
     }
   }
