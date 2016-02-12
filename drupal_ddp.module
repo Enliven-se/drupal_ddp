@@ -306,33 +306,54 @@ function _drupal_ddp_meteor_update_status() {
     $response_code = $response->code;
     switch ($response_code) {
       case 200:
+        // Send message to slack if feature is enabled.
+        if(variable_get('ddp_slack_integration')) {
+          $msg = 'Connection to Meteor is back up!';
+          drupal_ddp_report_connection_error_to_slack($msg, 1);
+        }
+
         variable_set('drupal_ddp_node_server_status', 1);
         variable_set('drupal_ddp_meteor_status', 1);
         break;
 
       case -1:
+        $msg = 'Connection to Meteor Down!';
+
+        // Send message to slack if feature is enabled.
+        if(variable_get('ddp_slack_integration')) {
+          drupal_ddp_report_connection_error_to_slack($msg, 0);
+        }
+
         variable_set('drupal_ddp_node_server_status', 1);
         variable_set('drupal_ddp_meteor_status', 0);
 
         watchdog('drupal_ddp',
-          'Connection to Meteor Down: ' . serialize($response),
+          $msg . ': ' . serialize($response),
           array(),
           WATCHDOG_ERROR);
 
         break;
 
       default:
+        $msg = 'Connection to Meteor Down!';
+
+        // Send message to slack if feature is enabled.
+        if(variable_get('ddp_slack_integration')) {
+          drupal_ddp_report_connection_error_to_slack($msg, 0);
+        }
+
         variable_set('drupal_ddp_node_server_status', 0);
         variable_set('drupal_ddp_meteor_status', 0);
 
         watchdog('drupal_ddp',
-          'Connection to Meteor Down: ' . serialize($response),
+          $msg . ': ' . serialize($response),
           array(),
           WATCHDOG_ERROR);
 
         drupal_set_message(t('Cannot reach Meteor when Node Server is down.'),
           'status',
           FALSE);
+
         break;
     }
 
@@ -344,7 +365,7 @@ function _drupal_ddp_meteor_update_status() {
     if (!empty($restws_response->data)) {
       variable_set('drupal_ddp_restws_status', 1);
     }
-    // If Meteor is up and no data is returned
+    // If Meteor is up and no data is returned.
     else {
       drupal_set_message(t('RestWS may not be configured correctly.'),
           'status',
@@ -357,6 +378,61 @@ function _drupal_ddp_meteor_update_status() {
   variable_set('drupal_ddp_dashboard_last_updated',
     format_date(time(), 'long')
   );
+}
+
+/**
+ * Report connection errors and successes to a slack channel.
+ *
+ * @param string $msg
+ *   The message to pass to Slack.
+ * @param string $status
+ *   The current state of the form being submitted.
+ */
+function drupal_ddp_report_connection_error_to_slack($msg, $status) {
+  if(variable_get('ddp_slack_integration') && !empty(variable_get('ddp_slack_integration_url'))) {
+    global $base_url;
+    $slack_webhook_url = variable_get('ddp_slack_integration_url');
+    $send_on_success = 'NO';
+
+    // Set slack icon for failure.
+    $icon_url = drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_fail.png';
+
+    // If connections were previously down during the last check, but the
+    // connections are now up, let's send a "Back Up!" message to Slack.
+    if ($status == 1) {
+      if (variable_get('drupal_ddp_node_server_status') == 0 ||
+          variable_get('drupal_ddp_meteor_status') == 0) {
+        // Use the 'success' icon image instead.
+        $icon_url = drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_success.png';
+        $send_on_success = 'YES';
+      }
+    }
+
+    if ($send_on_success == 'YES' || $status == 0) {
+      // Create message to post to slack.
+      $slack_message = '*Host:* ' . $base_url . '
+  ' . $msg . ' View <' . $base_url . '/admin/config/development/drupal-ddp|DDP Settings> for details!';
+
+      $data = array(
+        'text' => $slack_message,
+        'username' => 'Drupal DDP',
+        'icon_url' => $icon_url,
+        );
+
+      if (!empty(variable_get('ddp_slack_integration_channel'))) {
+        $data['channel'] = variable_get('ddp_slack_integration_channel');
+      }
+
+      $options = array(
+        'data' => drupal_json_encode($data),
+        'method' => 'POST',
+        'headers' => array('Content-Type' => 'application/json; charset=UTF-8'),
+      );
+
+      // Post request to slack webhook url
+      drupal_http_request($slack_webhook_url, $options);
+    }
+  }
 }
 
 /**
