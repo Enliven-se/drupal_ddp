@@ -335,7 +335,7 @@ function _drupal_ddp_meteor_update_status() {
         break;
 
       default:
-        $msg = 'Connection to Meteor Down!';
+        $msg = 'Cannot reach Meteor when Node Server is down.';
 
         // Send message to slack if feature is enabled.
         if (variable_get('ddp_slack_integration')) {
@@ -395,7 +395,7 @@ function drupal_ddp_report_connection_error_to_slack($msg, $status) {
     $send_on_success = 'NO';
 
     // Set slack icon for failure.
-    $icon_url = drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_fail.png';
+    $icon_url = $base_url . '/' . drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_fail.png';
 
     // If connections were previously down during the last check, but the
     // connections are now up, let's send a "Back Up!" message to Slack.
@@ -403,7 +403,7 @@ function drupal_ddp_report_connection_error_to_slack($msg, $status) {
       if (variable_get('drupal_ddp_node_server_status') == 0 ||
           variable_get('drupal_ddp_meteor_status') == 0) {
         // Use the 'success' icon image instead.
-        $icon_url = drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_success.png';
+        $icon_url = $base_url . '/' . drupal_get_path('module', 'drupal_ddp') . '/css/images/slackicon_success.png';
         $send_on_success = 'YES';
       }
     }
